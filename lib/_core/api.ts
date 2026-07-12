@@ -116,6 +116,40 @@ export async function exchangeOAuthCode(
   };
 }
 
+export type AuthUser = {
+  id: number;
+  openId: string;
+  name: string | null;
+  email: string | null;
+  loginMethod: string | null;
+  lastSignedIn: string;
+};
+
+export async function loginWithCredentials(input: {
+  username: string;
+  password: string;
+}): Promise<{ sessionToken: string; user: AuthUser }> {
+  const result = await apiCall<{ sessionToken: string; user: AuthUser }>("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+
+  return result;
+}
+
+export async function registerWithCredentials(input: {
+  username: string;
+  password: string;
+  name?: string;
+}): Promise<{ sessionToken: string; user: AuthUser }> {
+  const result = await apiCall<{ sessionToken: string; user: AuthUser }>("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+
+  return result;
+}
+
 // Logout
 export async function logout(): Promise<void> {
   await apiCall<void>("/api/auth/logout", {

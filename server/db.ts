@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
+import crypto from "node:crypto";
 import { InsertUser, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -87,6 +88,43 @@ export async function getUserByOpenId(openId: string) {
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
 
   return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getUserByUsername(username: string) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user: database not available");
+    return undefined;
+  }
+
+  const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
+
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function createLocalUser(user: {
+  username: string;
+  passwordHash: string;
+  name?: string | null;
+}) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot create user: database not available");
+    return undefined;
+  }
+
+  const openId = `local_${crypto.randomUUID()}`;
+  const values: InsertUser = {
+    openId,
+    username: user.username,
+    passwordHash: user.passwordHash,
+    name: user.name ?? user.username,
+    loginMethod: "password",
+    lastSignedIn: new Date(),
+  };
+
+  await db.insert(users).values(values);
+  return getUserByOpenId(openId);
 }
 
 // TODO: add feature queries here as your schema grows.
