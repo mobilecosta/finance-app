@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { supabase } from '../../lib/supabase/client';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '../../components/screen-container';
+import { useAuth } from '../../lib/contexts/AuthContext';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -10,127 +11,150 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const router = useRouter();
+  const { session, isLoading: authLoading } = useAuth();
+
+  // Redirecionar se já estiver logado
+  useEffect(() => {
+    if (!authLoading && session) {
+      router.replace('/(tabs)');
+    }
+  }, [session, authLoading]);
 
   async function handleAuth() {
     if (!email || !password) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+      Alert.alert('Campos Obrigatórios', 'Por favor, informe seu e-mail e senha.');
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert('Senha Curta', 'A senha deve ter pelo menos 6 caracteres.');
       return;
     }
 
     setLoading(true);
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { error, data } = await supabase.auth.signUp({ 
+          email, 
+          password,
+          options: {
+            emailRedirectTo: Platform.OS === 'web' ? window.location.origin : undefined,
+          }
+        });
+        
         if (error) throw error;
-        Alert.alert('Sucesso', 'Verifique seu e-mail para confirmar o cadastro.');
+        
+        if (data.user && data.session) {
+            // Login automático após cadastro se configurado no Supabase
+            router.replace('/(tabs)');
+        } else {
+            Alert.alert('Sucesso!', 'Cadastro realizado. Verifique seu e-mail para confirmar a conta antes de entrar.');
+            setIsSignUp(false);
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        router.replace('/(tabs)');
+        // O useEffect acima cuidará do redirecionamento
       }
     } catch (error: any) {
-      Alert.alert('Erro na Autenticação', error.message);
+      let message = 'Ocorreu um erro inesperado.';
+      
+      if (error.message.includes('Invalid login credentials')) {
+        message = 'E-mail ou senha incorretos.';
+      } else if (error.message.includes('User already registered')) {
+        message = 'Este e-mail já está cadastrado.';
+      } else {
+        message = error.message;
+      }
+      
+      Alert.alert('Falha na Autenticação', message);
     } finally {
       setLoading(false);
     }
   }
 
-  return (
-    <ScreenContainer>
-      <View style={styles.container}>
-        <Text style={styles.title}>💰 Finance App</Text>
-        <Text style={styles.subtitle}>{isSignUp ? 'Crie sua conta' : 'Bem-vindo de volta'}</Text>
-
-        <View style={styles.form}>
-          <TextInput
-            style={styles.input}
-            placeholder="E-mail"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Senha"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-
-          <TouchableOpacity 
-            style={styles.button} 
-            onPress={handleAuth}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#FFF" />
-            ) : (
-              <Text style={styles.buttonText}>{isSignUp ? 'Cadastrar' : 'Entrar'}</Text>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.switchButton} 
-            onPress={() => setIsSignUp(!isSignUp)}
-          >
-            <Text style={styles.switchText}>
-              {isSignUp ? 'Já tem uma conta? Entre aqui' : 'Não tem conta? Cadastre-se'}
-            </Text>
-          </TouchableOpacity>
-        </View>
+  if (authLoading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-background">
+        <ActivityIndicator size="large" color="#007AFF" />
       </View>
+    );
+  }
+
+  return (
+    <ScreenContainer className="bg-background">
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        className="flex-1"
+      >
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-6 justify-center">
+          <View className="items-center mb-10">
+            <Text className="text-5xl mb-2">💰</Text>
+            <Text className="text-3xl font-bold text-primary">Finance App</Text>
+            <Text className="text-muted text-base mt-2">Sua gestão financeira simplificada</Text>
+          </View>
+
+          <View className="bg-surface p-6 rounded-3xl border border-border shadow-sm">
+            <Text className="text-xl font-bold text-foreground mb-6">
+              {isSignUp ? 'Criar nova conta' : 'Entrar no aplicativo'}
+            </Text>
+
+            <View className="gap-4">
+              <View>
+                <Text className="text-sm text-muted mb-2 ml-1">E-mail</Text>
+                <TextInput
+                  className="bg-background border border-border p-4 rounded-xl text-foreground"
+                  placeholder="seu@email.com"
+                  placeholderTextColor="#687076"
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                />
+              </View>
+
+              <View>
+                <Text className="text-sm text-muted mb-2 ml-1">Senha</Text>
+                <TextInput
+                  className="bg-background border border-border p-4 rounded-xl text-foreground"
+                  placeholder="••••••"
+                  placeholderTextColor="#687076"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                />
+              </View>
+
+              <TouchableOpacity 
+                className={`bg-primary p-4 rounded-xl items-center mt-2 ${loading ? 'opacity-70' : ''}`}
+                onPress={handleAuth}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#FFF" />
+                ) : (
+                  <Text className="text-background font-bold text-lg">
+                    {isSignUp ? 'Finalizar Cadastro' : 'Acessar Conta'}
+                  </Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                className="mt-4 items-center"
+                onPress={() => setIsSignUp(!isSignUp)}
+              >
+                <Text className="text-primary font-medium">
+                  {isSignUp ? 'Já possui uma conta? Entre aqui' : 'Não tem uma conta? Cadastre-se agora'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          
+          <Text className="text-center text-muted text-xs mt-8">
+            Protegido por Supabase Auth
+          </Text>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </ScreenContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 20,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    color: '#007AFF',
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 18,
-    textAlign: 'center',
-    color: '#666',
-    marginBottom: 40,
-  },
-  form: {
-    width: '100%',
-  },
-  input: {
-    backgroundColor: '#F2F2F7',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
-    fontSize: 16,
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  buttonText: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  switchButton: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  switchText: {
-    color: '#007AFF',
-    fontSize: 14,
-  },
-});
