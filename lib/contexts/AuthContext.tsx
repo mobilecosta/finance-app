@@ -1,85 +1,102 @@
-import React, { createContext, useContext, useEffect, useCallback, useState } from "react";
-import * as Api from "@/lib/_core/api";
-import * as Auth from "@/lib/_core/auth";
+import { Session, User as SupabaseUser } from "@supabase/supabase-js";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { supabase } from "@/lib/supabase/client";
+
+export type User = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  loginMethod: string | null;
+  lastSignedIn: Date;
+};
 
 interface AuthContextType {
-  session: { user: Auth.User } | null;
-  user: Auth.User | null;
+  session: { user: User } | null;
+  user: User | null;
   isLoading: boolean;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function mapSupabaseUser(user: SupabaseUser): User {
+  const metadata = user.user_metadata as Record<string, unknown> | undefined;
+  const name =
+    (typeof metadata?.full_name === "string" && metadata.full_name) ||
+    (typeof metadata?.name === "string" && metadata.name) ||
+    null;
+
+  return {
+    id: user.id,
+    name: name || user.email || null,
+    email: user.email ?? null,
+    loginMethod: "supabase",
+    lastSignedIn: new Date(user.last_sign_in_at ?? user.created_at ?? Date.now()),
+  };
+}
+
+function mapSession(session: Session | null) {
+  if (!session?.user) {
+    return null;
+  }
+
+  return { user: mapSupabaseUser(session.user) };
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [session, setSession] = useState<{ user: Auth.User } | null>(null);
-  const [user, setUser] = useState<Auth.User | null>(null);
+  const [session, setSession] = useState<{ user: User } | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const refreshSession = useCallback(async () => {
-    try {
-      const currentUser = await Api.getMe();
-
-      if (currentUser) {
-        const normalizedUser: Auth.User = {
-          id: currentUser.id,
-          openId: currentUser.openId,
-          name: currentUser.name,
-          email: currentUser.email,
-          loginMethod: currentUser.loginMethod,
-          lastSignedIn: new Date(currentUser.lastSignedIn),
-        };
-
-        setSession({ user: normalizedUser });
-        setUser(normalizedUser);
-        return;
-      }
-
-      const storedUser = await Auth.getUserInfo();
-      if (storedUser) {
-        setSession({ user: storedUser });
-        setUser(storedUser);
-        return;
-      }
-
-      setSession(null);
-      setUser(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    void refreshSession();
+    let mounted = true;
 
-    const unsubscribe = Auth.subscribeAuthChanges(() => {
-      void refreshSession();
+    const syncSession = (nextSession: Session | null) => {
+      if (!mounted) return;
+      const mapped = mapSession(nextSession);
+      setSession(mapped);
+      setUser(mapped?.user ?? null);
+      setIsLoading(false);
+    };
+
+    void supabase.auth
+      .getSession()
+      .then(({ data }) => syncSession(data.session))
+      .catch(() => syncSession(null));
+
+    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      syncSession(nextSession);
     });
 
     return () => {
-      unsubscribe();
+      mounted = false;
+      data.subscription.unsubscribe();
     };
-  }, [refreshSession]);
+  }, []);
 
   const signOut = async () => {
-    await Api.logout().catch(() => undefined);
-    await Auth.removeSessionToken();
-    await Auth.clearUserInfo();
+    await supabase.auth.signOut();
     setSession(null);
     setUser(null);
   };
 
-  return (
-    <AuthContext.Provider value={{ session, user, isLoading, signOut }}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({
+      session,
+      user,
+      isLoading,
+      signOut,
+    }),
+    [session, user, isLoading],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

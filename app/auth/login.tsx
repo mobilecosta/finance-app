@@ -1,8 +1,7 @@
 import { BButton, BCard } from "@/components/bootstrap";
 import { ScreenContainer } from "@/components/screen-container";
 import { useBootstrapStyles } from "@/lib/bootstrap-theme";
-import { loginWithCredentials, registerWithCredentials, type AuthUser } from "@/lib/_core/api";
-import * as Auth from "@/lib/_core/auth";
+import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
@@ -16,7 +15,7 @@ export default function LoginScreen() {
   const { s, c } = useBootstrapStyles();
   const [mode, setMode] = useState<Mode>("login");
   const [loading, setLoading] = useState(false);
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
 
@@ -28,45 +27,57 @@ export default function LoginScreen() {
 
   const title = useMemo(() => (mode === "login" ? "Entrar" : "Criar conta"), [mode]);
 
-  const persistSession = async (sessionToken: string, user: AuthUser) => {
-    await Auth.setSessionToken(sessionToken);
-    await Auth.setUserInfo({
-      id: user.id,
-      openId: user.openId,
-      name: user.name,
-      email: user.email,
-      loginMethod: user.loginMethod,
-      lastSignedIn: new Date(user.lastSignedIn),
-    });
-  };
-
   const handleSubmit = async () => {
-    if (!username.trim() || !password.trim()) {
-      Alert.alert("Campos obrigatórios", "Informe usuário e senha.");
+    if (!email.trim() || !password.trim()) {
+      Alert.alert("Campos obrigatórios", "Informe e-mail e senha.");
       return;
     }
 
     if (mode === "register" && !name.trim()) {
-      Alert.alert("Campos obrigatórios", "Informe também o nome para criar a conta.");
+      Alert.alert("Campos obrigatórios", "Informe seu nome para criar a conta.");
       return;
     }
 
     setLoading(true);
     try {
-      const normalizedUsername = username.trim().toLowerCase();
-      const result =
-        mode === "login"
-          ? await loginWithCredentials({ username: normalizedUsername, password })
-          : await registerWithCredentials({
-              username: normalizedUsername,
-              password,
-              name: name.trim(),
-            });
+      const normalizedEmail = email.trim().toLowerCase();
 
-      await persistSession(result.sessionToken, result.user);
+      if (mode === "login") {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: normalizedEmail,
+          password,
+        });
+
+        if (error) {
+          throw error;
+        }
+      } else {
+        const { data, error } = await supabase.auth.signUp({
+          email: normalizedEmail,
+          password,
+          options: {
+            data: {
+              full_name: name.trim(),
+            },
+          },
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        if (!data.session) {
+          Alert.alert(
+            "Conta criada",
+            "Sua conta foi criada, mas o Supabase exige confirmação de e-mail antes do acesso.",
+          );
+          return;
+        }
+      }
+
       router.replace("/(tabs)");
     } catch (error) {
-      console.error("[Login] Failed to complete credential auth:", error);
+      console.error("[Login] Failed to authenticate with Supabase:", error);
       Alert.alert(
         mode === "login" ? "Falha no login" : "Falha no cadastro",
         error instanceof Error ? error.message : "Não foi possível concluir a autenticação.",
@@ -83,27 +94,27 @@ export default function LoginScreen() {
           <Text style={{ fontSize: 48 }}>💰</Text>
           <Text style={[s.h3, { color: c.PRIMARY }]}>Finance App</Text>
           <Text style={[s.text, s.textMuted, s.mt2, { textAlign: "center" }]}>
-            Entre com seu usuário e senha para acessar suas finanças.
+            Entre com e-mail e senha para acessar suas finanças.
           </Text>
         </View>
 
         <BCard style={{ borderRadius: 16 }}>
           <Text style={[s.h5, { color: c.BODY_COLOR }, s.mb3]}>{title}</Text>
           <Text style={[s.text, s.textMuted, s.mb4]}>
-            Use sua conta local para acessar o app em qualquer dispositivo.
+            Seu login agora usa Supabase Auth, sem backend local.
           </Text>
 
           <View
-              style={[
-                s.mb4,
-                {
-                  flexDirection: "row",
-                  gap: 8,
-                  backgroundColor: c.financeSurface,
-                  padding: 4,
-                  borderRadius: 12,
-                },
-              ]}
+            style={[
+              s.mb4,
+              {
+                flexDirection: "row",
+                gap: 8,
+                backgroundColor: c.financeSurface,
+                padding: 4,
+                borderRadius: 12,
+              },
+            ]}
           >
             <Pressable
               onPress={() => setMode("login")}
@@ -152,7 +163,7 @@ export default function LoginScreen() {
                 style={[
                   {
                     borderWidth: 1,
-                    borderColor: c.BORDER,
+                    borderColor: c.BORDER_COLOR,
                     borderRadius: 12,
                     paddingHorizontal: 16,
                     paddingVertical: 12,
@@ -162,7 +173,7 @@ export default function LoginScreen() {
                   },
                 ]}
                 placeholder="Seu nome"
-                placeholderTextColor={c.MUTED}
+                placeholderTextColor={c.SECONDARY}
                 value={name}
                 onChangeText={setName}
                 autoCapitalize="words"
@@ -170,12 +181,12 @@ export default function LoginScreen() {
             </>
           )}
 
-          <Text style={[s.text, s.textMuted, s.mb2]}>Usuário</Text>
+          <Text style={[s.text, s.textMuted, s.mb2]}>E-mail</Text>
           <TextInput
             style={[
               {
                 borderWidth: 1,
-                borderColor: c.BORDER,
+                borderColor: c.BORDER_COLOR,
                 borderRadius: 12,
                 paddingHorizontal: 16,
                 paddingVertical: 12,
@@ -184,13 +195,14 @@ export default function LoginScreen() {
                 marginBottom: 16,
               },
             ]}
-            placeholder="ex: marcos"
-            placeholderTextColor={c.MUTED}
-            value={username}
-            onChangeText={setUsername}
+            placeholder="voce@exemplo.com"
+            placeholderTextColor={c.SECONDARY}
+            value={email}
+            onChangeText={setEmail}
             autoCapitalize="none"
             autoCorrect={false}
-            autoComplete="username"
+            autoComplete="email"
+            keyboardType="email-address"
           />
 
           <Text style={[s.text, s.textMuted, s.mb2]}>Senha</Text>
@@ -198,7 +210,7 @@ export default function LoginScreen() {
             style={[
               {
                 borderWidth: 1,
-                borderColor: c.BORDER,
+                borderColor: c.BORDER_COLOR,
                 borderRadius: 12,
                 paddingHorizontal: 16,
                 paddingVertical: 12,
@@ -208,7 +220,7 @@ export default function LoginScreen() {
               },
             ]}
             placeholder="Sua senha"
-            placeholderTextColor={c.MUTED}
+            placeholderTextColor={c.SECONDARY}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
