@@ -134,13 +134,22 @@ O aplicativo segue as **Apple Human Interface Guidelines (HIG)** para garantir u
 
 ## 💾 Persistência de Dados
 
-Os dados são armazenados localmente no dispositivo usando **AsyncStorage**:
+Originalmente, o projeto utilizava apenas o **AsyncStorage** para armazenamento local. Agora, o sistema foi atualizado para suportar sincronização em nuvem e autenticação via **Supabase (PostgreSQL)**.
 
-- **Contas**: Salvas com ID único, nome, tipo e saldo
-- **Naturezas**: Armazenadas com cor, ícone e tipo
-- **Movimentos**: Persistidos com data, descrição, valor e referências
+### 🗄️ Banco de Dados (Supabase)
 
-### Estrutura de Dados
+A estrutura do banco de dados foi desenhada para ser escalável e segura, utilizando **Row Level Security (RLS)** para garantir a privacidade dos dados de cada usuário.
+
+| Tabela | Descrição | Relacionamentos |
+| :--- | :--- | :--- |
+| **profiles** | Dados de perfil estendidos do usuário. | Vinculada ao `auth.users` do Supabase. |
+| **accounts** | Contas bancárias (Corrente, Poupança, etc). | Pertence a um usuário (`user_id`). |
+| **natures** | Categorias de receitas e despesas. | Pertence a um usuário (`user_id`). |
+| **movements** | Transações financeiras detalhadas. | Vinculada a uma conta e a uma natureza. |
+
+O script SQL completo para provisionamento do banco está disponível no arquivo `supabase_schema.sql` na raiz do projeto.
+
+### Estrutura de Objetos (TypeScript)
 
 **Conta**
 ```typescript
