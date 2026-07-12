@@ -11,6 +11,17 @@ export type User = {
   lastSignedIn: Date;
 };
 
+const authListeners = new Set<() => void>();
+
+function emitAuthChange() {
+  authListeners.forEach((listener) => listener());
+}
+
+export function subscribeAuthChanges(listener: () => void) {
+  authListeners.add(listener);
+  return () => authListeners.delete(listener);
+}
+
 export async function getSessionToken(): Promise<string | null> {
   try {
     // Web platform uses cookie-based auth, no manual token management needed
@@ -45,6 +56,7 @@ export async function setSessionToken(token: string): Promise<void> {
     console.log("[Auth] Setting session token...", token.substring(0, 20) + "...");
     await SecureStore.setItemAsync(SESSION_TOKEN_KEY, token);
     console.log("[Auth] Session token stored in SecureStore successfully");
+    emitAuthChange();
   } catch (error) {
     console.error("[Auth] Failed to set session token:", error);
     throw error;
@@ -63,6 +75,7 @@ export async function removeSessionToken(): Promise<void> {
     console.log("[Auth] Removing session token...");
     await SecureStore.deleteItemAsync(SESSION_TOKEN_KEY);
     console.log("[Auth] Session token removed from SecureStore successfully");
+    emitAuthChange();
   } catch (error) {
     console.error("[Auth] Failed to remove session token:", error);
   }
@@ -102,12 +115,14 @@ export async function setUserInfo(user: User): Promise<void> {
       // Use localStorage for web
       window.localStorage.setItem(USER_INFO_KEY, JSON.stringify(user));
       console.log("[Auth] User info stored in localStorage successfully");
+      emitAuthChange();
       return;
     }
 
     // Use SecureStore for native
     await SecureStore.setItemAsync(USER_INFO_KEY, JSON.stringify(user));
     console.log("[Auth] User info stored in SecureStore successfully");
+    emitAuthChange();
   } catch (error) {
     console.error("[Auth] Failed to set user info:", error);
   }
@@ -118,11 +133,13 @@ export async function clearUserInfo(): Promise<void> {
     if (Platform.OS === "web") {
       // Use localStorage for web
       window.localStorage.removeItem(USER_INFO_KEY);
+      emitAuthChange();
       return;
     }
 
     // Use SecureStore for native
     await SecureStore.deleteItemAsync(USER_INFO_KEY);
+    emitAuthChange();
   } catch (error) {
     console.error("[Auth] Failed to clear user info:", error);
   }
