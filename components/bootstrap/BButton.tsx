@@ -1,6 +1,6 @@
 import React from "react";
 import { TouchableOpacity, Text, ActivityIndicator, type TouchableOpacityProps } from "react-native";
-import { useBootstrapStyles } from "@/lib/bootstrap-theme";
+import { getBootstrapColor, useBootstrapStyles } from "@/lib/bootstrap-theme";
 
 type Variant =
   | "primary"
@@ -46,7 +46,7 @@ export function BButton({
   const isOutline = variant.startsWith("outline-");
   const isLink = variant === "link";
   const baseColor = isOutline ? variant.replace("outline-", "") : variant;
-  const themeColor = c[baseColor.toUpperCase()] || c.PRIMARY;
+  const themeColor = getBootstrapColor(baseColor, c.PRIMARY);
 
   const buttonStyle: any[] = [s.btn];
   const textStyle: any[] = [s.btnText];

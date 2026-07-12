@@ -56,7 +56,13 @@ export function BListGroupItem({
   return (
     <View style={itemStyle} {...props}>
       {typeof children === "string" ? (
-        <Text style={[s.listGroupItemText, active ? s.listGroupItemActiveText : {}, disabled ? s.listGroupItemDisabledText : {}]}>
+        <Text
+          style={[
+            s.listGroupItemText,
+            active ? s.listGroupItemActiveText : null,
+            disabled ? s.listGroupItemDisabledText : null,
+          ]}
+        >
           {children}
         </Text>
       ) : (

@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, type ViewProps } from "react-native";
-import { useBootstrapStyles } from "@/lib/bootstrap-theme";
+import { getBootstrapColor, useBootstrapStyles } from "@/lib/bootstrap-theme";
 
 type Variant = "primary" | "secondary" | "success" | "danger" | "warning" | "info" | "light" | "dark";
 
@@ -26,7 +26,7 @@ export function BAlert({
 
   return (
     <View style={alertStyle} {...props}>
-      <Text style={[(s as any)[`alert${capitalize(variant)}Text`], s.alertText]}>{children}</Text>
+      <Text style={[{ color: getBootstrapColor(variant, s.text.color) }, s.alertText]}>{children}</Text>
     </View>
   );
 }

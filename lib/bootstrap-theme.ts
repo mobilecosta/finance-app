@@ -1,8 +1,6 @@
-import { StyleSheet } from "react-native";
-import BootstrapStyleSheet from "react-native-bootstrap-styles";
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 
-const constants = {
+const c: any = {
   PRIMARY: "#0a7ea4",
   SUCCESS: "#10B981",
   DANGER: "#EF4444",
@@ -12,43 +10,105 @@ const constants = {
   LIGHT: "#f8f9fa",
   DARK: "#212529",
   WHITE: "#ffffff",
+  BLACK: "#000000",
   BODY_BG: "#ffffff",
   BODY_COLOR: "#212529",
   BORDER_COLOR: "#E5E7EB",
-  ENABLE_ROUNDED: true,
-  ENABLE_SHADOWS: true,
+  BORDER_WIDTH: 1,
   REM: 16,
+  FONT_SIZE_SM: 12,
+  FONT_SIZE_BASE: 16,
+  FONT_SIZE_LG: 18,
+  FONT_SIZE_XL: 24,
+  FONT_WEIGHT_BOLD: "700",
+  ROUNDED_PILL: 9999,
 };
 
-const customClasses = (c: any, classes: any) => ({
-  financeBackground: {
-    backgroundColor: c.BODY_BG,
-  },
-  financeSurface: {
-    backgroundColor: "#f5f5f5",
-  },
-  financeText: {
-    color: c.BODY_COLOR,
-  },
-  financeMuted: {
-    color: c.SECONDARY,
-  },
-  financeBorder: {
-    borderColor: c.BORDER_COLOR,
-  },
-  incomeText: {
-    color: c.SUCCESS,
-  },
-  expenseText: {
-    color: c.DANGER,
-  },
-  primaryText: {
-    color: c.PRIMARY,
-  },
+const space = (value: number) => value * c.REM;
+
+const sharedText = {
+  color: c.BODY_COLOR,
+  fontSize: c.FONT_SIZE_BASE,
+};
+
+const sharedCard = {
+  backgroundColor: c.WHITE,
+  borderRadius: 16,
+  borderWidth: 1,
+  borderColor: c.BORDER_COLOR,
+  padding: space(1),
+};
+
+const sharedButton = {
+  minHeight: 44,
+  borderRadius: 12,
+  borderWidth: 1,
+  alignItems: "center",
+  justifyContent: "center",
+  paddingHorizontal: space(1),
+  paddingVertical: 12,
+};
+
+const sharedInput = {
+  minHeight: 44,
+  borderRadius: 12,
+  borderWidth: 1,
+  borderColor: c.BORDER_COLOR,
+  paddingHorizontal: 14,
+  paddingVertical: 12,
+  color: c.BODY_COLOR,
+  backgroundColor: c.WHITE,
+};
+
+const s: any = {
+  flex1: { flex: 1 },
+  flexRow: { flexDirection: "row" },
+  alignItemsCenter: { alignItems: "center" },
+  justifyContentCenter: { justifyContent: "center" },
+  justifyContentBetween: { justifyContent: "space-between" },
+  textCenter: { textAlign: "center" },
+  textCapitalize: { textTransform: "capitalize" },
+  fontItalic: { fontStyle: "italic" },
+  fontWeightBold: { fontWeight: c.FONT_WEIGHT_BOLD },
+  small: { fontSize: c.FONT_SIZE_SM },
+  text: sharedText,
+  textMuted: { color: c.SECONDARY },
+  textDanger: { color: c.DANGER },
+  h3: { fontSize: 28, fontWeight: c.FONT_WEIGHT_BOLD, color: c.BODY_COLOR },
+  h5: { fontSize: c.FONT_SIZE_XL, fontWeight: c.FONT_WEIGHT_BOLD, color: c.BODY_COLOR },
+  h6: { fontSize: c.FONT_SIZE_LG, fontWeight: c.FONT_WEIGHT_BOLD, color: c.BODY_COLOR },
+  flexWrap: { flexWrap: "wrap" },
+  w100: { width: "100%" },
+  mt2: { marginTop: space(0.5) },
+  mt3: { marginTop: space(0.75) },
+  mt4: { marginTop: space(1) },
+  mb1: { marginBottom: space(0.25) },
+  mb2: { marginBottom: space(0.5) },
+  mb3: { marginBottom: space(0.75) },
+  mb4: { marginBottom: space(1) },
+  mb5: { marginBottom: space(1.25) },
+  py5: { paddingVertical: space(1.25) },
+  px4: { paddingHorizontal: space(1) },
+  formControl: sharedInput,
+  formGroup: { marginBottom: space(1) },
+  formLabelText: { fontSize: c.FONT_SIZE_SM, color: c.SECONDARY, marginBottom: 6 },
+  btn: sharedButton,
+  btnText: { fontSize: c.FONT_SIZE_BASE, fontWeight: c.FONT_WEIGHT_BOLD },
+  btnSm: { minHeight: 36, paddingVertical: 8, paddingHorizontal: 12 },
+  btnSmText: { fontSize: c.FONT_SIZE_SM },
+  btnLg: { minHeight: 52, paddingVertical: 14, paddingHorizontal: 18 },
+  btnLgText: { fontSize: c.FONT_SIZE_LG },
+  btnBlock: { alignSelf: "stretch" },
+  btnDisabled: { opacity: 0.6 },
+  card: sharedCard,
+  cardHeader: { paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: c.BORDER_COLOR },
+  cardBody: { paddingVertical: 12 },
+  cardFooter: { paddingTop: 12, borderTopWidth: 1, borderTopColor: c.BORDER_COLOR },
+  cardTitle: { marginBottom: 8 },
   badge: {
-    paddingHorizontal: c.REM * 0.5,
-    paddingVertical: c.REM * 0.2,
-    borderRadius: c.REM * 0.25,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
     alignSelf: "flex-start",
   },
   badgePill: {
@@ -57,91 +117,180 @@ const customClasses = (c: any, classes: any) => ({
   badgeText: {
     fontSize: c.FONT_SIZE_SM,
     fontWeight: c.FONT_WEIGHT_BOLD,
-  },
-  fabButton: {
-    position: "absolute",
-    right: c.REM,
-    bottom: c.REM,
-    width: c.REM * 3.5,
-    height: c.REM * 3.5,
-    borderRadius: c.REM * 1.75,
-    backgroundColor: c.PRIMARY,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: c.BLACK,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  fabButtonText: {
     color: c.WHITE,
-    fontSize: c.REM * 1.5,
-    fontWeight: c.FONT_WEIGHT_BOLD,
   },
-  tabBar: {
-    borderTopWidth: c.BORDER_WIDTH,
-    borderTopColor: c.BORDER_COLOR,
-    backgroundColor: c.BODY_BG,
-    paddingTop: c.REM * 0.4,
-    paddingBottom: c.REM * 0.4,
-    height: c.REM * 3.6,
+  alert: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 14,
   },
-  tabBarItem: {
-    flex: 1,
+  alertDismissible: { paddingRight: 40 },
+  alertText: { fontSize: c.FONT_SIZE_BASE },
+  alertPrimary: { backgroundColor: "#e8f4fa", borderColor: "#b7deef" },
+  alertPrimaryText: { color: c.PRIMARY },
+  alertSecondary: { backgroundColor: "#f2f4f7", borderColor: "#d5d9df" },
+  alertSecondaryText: { color: c.SECONDARY },
+  alertSuccess: { backgroundColor: "#ecfdf5", borderColor: "#bbf7d0" },
+  alertSuccessText: { color: c.SUCCESS },
+  alertDanger: { backgroundColor: "#fef2f2", borderColor: "#fecaca" },
+  alertDangerText: { color: c.DANGER },
+  alertWarning: { backgroundColor: "#fffbeb", borderColor: "#fde68a" },
+  alertWarningText: { color: c.WARNING },
+  alertInfo: { backgroundColor: "#eff6ff", borderColor: "#bfdbfe" },
+  alertInfoText: { color: c.INFO },
+  alertLight: { backgroundColor: c.LIGHT, borderColor: c.BORDER_COLOR },
+  alertLightText: { color: c.BODY_COLOR },
+  alertDark: { backgroundColor: c.DARK, borderColor: c.DARK },
+  alertDarkText: { color: c.WHITE },
+  modal: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)" },
+  modalDialog: { flex: 1, justifyContent: "flex-end" },
+  modalContent: {
+    backgroundColor: c.WHITE,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    maxHeight: "90%",
+  },
+  modalHeader: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
   },
-  tableHeader: {
-    backgroundColor: c.LIGHT,
-    borderBottomWidth: c.BORDER_WIDTH,
+  modalTitle: { flex: 1, marginRight: 12 },
+  modalHeaderClose: { padding: 8 },
+  modalBody: { maxHeight: "100%" },
+  modalFooter: { marginTop: 16 },
+  containerFluid: { width: "100%", paddingHorizontal: 16 },
+  containerMd: { width: "100%", paddingHorizontal: 16, maxWidth: 768, alignSelf: "center" },
+  row: { flexDirection: "row", flexWrap: "wrap", marginHorizontal: -8 },
+  noGutters: { marginHorizontal: 0 },
+  col: { flex: 1, paddingHorizontal: 8 },
+  col1: { width: "8.333333%", paddingHorizontal: 8 },
+  col2: { width: "16.666667%", paddingHorizontal: 8 },
+  col3: { width: "25%", paddingHorizontal: 8 },
+  col4: { width: "33.333333%", paddingHorizontal: 8 },
+  col5: { width: "41.666667%", paddingHorizontal: 8 },
+  col6: { width: "50%", paddingHorizontal: 8 },
+  col7: { width: "58.333333%", paddingHorizontal: 8 },
+  col8: { width: "66.666667%", paddingHorizontal: 8 },
+  col9: { width: "75%", paddingHorizontal: 8 },
+  col10: { width: "83.333333%", paddingHorizontal: 8 },
+  col11: { width: "91.666667%", paddingHorizontal: 8 },
+  col12: { width: "100%", paddingHorizontal: 8 },
+  listGroup: {
+    borderWidth: 1,
+    borderColor: c.BORDER_COLOR,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  listGroupFlush: { borderRadius: 0 },
+  listGroupItem: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
     borderBottomColor: c.BORDER_COLOR,
-    paddingVertical: c.REM * 0.5,
-    paddingHorizontal: c.REM * 0.5,
+    backgroundColor: c.WHITE,
   },
-  tableHeaderText: {
-    color: c.SECONDARY,
-    fontWeight: c.FONT_WEIGHT_BOLD,
-    fontSize: c.FONT_SIZE_SM,
-  },
-  tableRow: {
-    borderBottomWidth: c.BORDER_WIDTH,
-    borderBottomColor: c.BORDER_COLOR,
-    paddingVertical: c.REM * 0.6,
-    paddingHorizontal: c.REM * 0.5,
-  },
-  tableCellText: {
-    fontSize: c.FONT_SIZE_SM,
-    color: c.BODY_COLOR,
-  },
-});
+  listGroupItemActive: { backgroundColor: "#e8f4fa" },
+  listGroupItemActiveText: { color: c.PRIMARY, fontWeight: c.FONT_WEIGHT_BOLD },
+  listGroupItemDisabled: { backgroundColor: c.LIGHT, opacity: 0.7 },
+  listGroupItemDisabledText: { color: c.SECONDARY },
+  listGroupItemText: { color: c.BODY_COLOR },
+  listGroupItemPrimary: { backgroundColor: "#e8f4fa" },
+  listGroupItemPrimaryText: { color: c.PRIMARY },
+  listGroupItemSecondary: { backgroundColor: "#f2f4f7" },
+  listGroupItemSecondaryText: { color: c.SECONDARY },
+  listGroupItemSuccess: { backgroundColor: "#ecfdf5" },
+  listGroupItemSuccessText: { color: c.SUCCESS },
+  listGroupItemDanger: { backgroundColor: "#fef2f2" },
+  listGroupItemDangerText: { color: c.DANGER },
+  listGroupItemWarning: { backgroundColor: "#fffbeb" },
+  listGroupItemWarningText: { color: c.WARNING },
+  listGroupItemInfo: { backgroundColor: "#eff6ff" },
+  listGroupItemInfoText: { color: c.INFO },
+  listGroupItemLight: { backgroundColor: c.LIGHT },
+  listGroupItemLightText: { color: c.BODY_COLOR },
+  listGroupItemDark: { backgroundColor: c.DARK },
+  listGroupItemDarkText: { color: c.WHITE },
+  listGroupItemFirstChild: (_first?: boolean) => ({
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  }),
+  listGroupItemLastChild: (_last?: boolean, _length?: number) => ({
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    borderBottomWidth: 0,
+  }),
+  alignItemsStart: { alignItems: "flex-start" },
+  alignItemsEnd: { alignItems: "flex-end" },
+  justifyContentStart: { justifyContent: "flex-start" },
+  justifyContentEnd: { justifyContent: "flex-end" },
+  textWrap: { flexWrap: "wrap" },
+  background: { backgroundColor: c.BODY_BG },
+  light: { backgroundColor: c.LIGHT },
+  primary: { backgroundColor: c.PRIMARY },
+  secondary: { backgroundColor: c.SECONDARY },
+  success: { backgroundColor: c.SUCCESS },
+  danger: { backgroundColor: c.DANGER },
+  warning: { backgroundColor: c.WARNING },
+  info: { backgroundColor: c.INFO },
+  bottom: { bottom: 0 },
+  left: { left: 0 },
+  right: { right: 0 },
+  top: { top: 0 },
+  tint: { color: c.PRIMARY },
+  icon: { marginRight: 8 },
+  schemeToggle: { padding: 16, borderRadius: 16, borderWidth: 1, borderColor: c.BORDER_COLOR },
+  schemeToggleTitle: { fontWeight: c.FONT_WEIGHT_BOLD, color: c.BODY_COLOR },
+  schemeToggleSubtitle: { color: c.SECONDARY, marginTop: 4 },
+  frame: { flex: 1 },
+  insets: { padding: 0 },
+  balance: { fontWeight: c.FONT_WEIGHT_BOLD },
+  income: { color: c.SUCCESS },
+  expense: { color: c.DANGER },
+  map: {},
+  get: {},
+  set: {},
+  find: {},
+  length: {},
+  env: {},
+  code: {},
+  error: {},
+  sessionToken: {},
+  user: {},
+  impactAsync: {},
+  onPressIn: {},
+  expo: {},
+  primaryText: { color: c.PRIMARY },
+  financeBackground: { backgroundColor: c.BODY_BG },
+  financeSurface: { backgroundColor: "#f5f5f5" },
+  financeText: { color: c.BODY_COLOR },
+  financeMuted: { color: c.SECONDARY },
+  financeBorder: { borderColor: c.BORDER_COLOR },
+  incomeText: { color: c.SUCCESS },
+  expenseText: { color: c.DANGER },
+};
 
-const bootstrapStyleSheet = new BootstrapStyleSheet(
-  constants,
-  customClasses,
-);
+const variantColors = {
+  primary: c.PRIMARY,
+  secondary: c.SECONDARY,
+  success: c.SUCCESS,
+  danger: c.DANGER,
+  warning: c.WARNING,
+  info: c.INFO,
+  light: c.LIGHT,
+  dark: c.DARK,
+} as const;
 
-const flattenedStyles = Object.fromEntries(
-  Object.entries(bootstrapStyleSheet.s).map(([key, value]) => [key, StyleSheet.flatten(value)]),
-);
-
-export const s = flattenedStyles;
-export const c = bootstrapStyleSheet.c;
-
-export function useBootstrapStyles() {
-  const [, forceUpdate] = useState(0);
-
-  useEffect(() => {
-    const handler = () => forceUpdate((n) => n + 1);
-    bootstrapStyleSheet.addDimensionsListener(handler);
-    bootstrapStyleSheet.addOrientationListener(handler);
-    return () => {
-      bootstrapStyleSheet.removeDimensionsListener(handler);
-      bootstrapStyleSheet.removeOrientationListener(handler);
-    };
-  }, []);
-
-  return { s, c };
+export function getBootstrapColor(variant: keyof typeof variantColors | string, fallback = c.PRIMARY) {
+  return (variant in variantColors ? variantColors[variant as keyof typeof variantColors] : fallback) ?? fallback;
 }
 
-export default bootstrapStyleSheet;
+export { s, c };
+
+export function useBootstrapStyles() {
+  return useMemo(() => ({ s, c }), []);
+}
+
+export default { s, c };

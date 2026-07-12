@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text } from "react-native";
-import { useBootstrapStyles } from "@/lib/bootstrap-theme";
+import { getBootstrapColor, useBootstrapStyles } from "@/lib/bootstrap-theme";
 
 type Variant = "primary" | "secondary" | "success" | "danger" | "warning" | "info" | "light" | "dark";
 
@@ -13,7 +13,7 @@ export interface BBadgeProps {
 
 export function BBadge({ children, variant = "secondary", pill = false, style }: BBadgeProps) {
   const { s, c } = useBootstrapStyles();
-  const themeColor = c[variant.toUpperCase()] || c.SECONDARY;
+  const themeColor = getBootstrapColor(variant, c.SECONDARY);
 
   const badgeStyle: any[] = [s.badge];
   if (pill) badgeStyle.push(s.badgePill);

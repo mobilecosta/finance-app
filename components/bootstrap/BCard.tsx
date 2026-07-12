@@ -1,6 +1,6 @@
 import React from "react";
-import { View, type ViewProps } from "react-native";
-import { useBootstrapStyles } from "@/lib/bootstrap-theme";
+import { View, Text, type ViewProps } from "react-native";
+import { getBootstrapColor, useBootstrapStyles } from "@/lib/bootstrap-theme";
 
 export interface BCardProps extends ViewProps {
   children?: React.ReactNode;
@@ -14,7 +14,7 @@ export function BCard({ children, header, footer, style, variant = "default", ..
   const cardStyle: any[] = [s.card];
 
   if (variant !== "default") {
-    const themeColor = c[variant.toUpperCase()] || c.PRIMARY;
+    const themeColor = getBootstrapColor(variant, c.PRIMARY);
     cardStyle.push({ borderColor: themeColor, borderWidth: 1 });
   }
 
@@ -41,8 +41,6 @@ export function BCardTitle({ children }: BCardTitleProps) {
     </View>
   );
 }
-
-import { Text } from "react-native";
 
 export interface BCardTextProps {
   children: React.ReactNode;
