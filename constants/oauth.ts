@@ -1,4 +1,5 @@
 import * as Linking from "expo-linking";
+import Constants from "expo-constants";
 import * as ReactNative from "react-native";
 
 // Extract scheme from bundle ID (last segment timestamp, prefixed with "manus")
@@ -37,12 +38,24 @@ export function getApiBaseUrl(): string {
 
   // On web, derive from current hostname by replacing port 8081 with 3000
   if (ReactNative.Platform.OS === "web" && typeof window !== "undefined" && window.location) {
-    const { protocol, hostname } = window.location;
+    const { protocol, hostname, port } = window.location;
     // Pattern: 8081-sandboxid.region.domain -> 3000-sandboxid.region.domain
     const apiHostname = hostname.replace(/^8081-/, "3000-");
     if (apiHostname !== hostname) {
       return `${protocol}//${apiHostname}`;
     }
+
+    if (port === "8081") {
+      return `${protocol}//${hostname}:3000`;
+    }
+  }
+
+  const expoConfig = Constants.expoConfig as { hostUri?: string } | undefined;
+  const expoGoConfig = (Constants as { expoGoConfig?: { debuggerHost?: string } }).expoGoConfig;
+  const hostUri = expoConfig?.hostUri || expoGoConfig?.debuggerHost || "";
+  const hostMatch = hostUri.match(/^(?:https?:\/\/)?([^:/]+)(?::\d+)?$/);
+  if (hostMatch?.[1]) {
+    return `http://${hostMatch[1]}:3000`;
   }
 
   // Fallback to empty (will use relative URL)
