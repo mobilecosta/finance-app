@@ -115,21 +115,75 @@ export function MovementProvider({ children }: { children: React.ReactNode }) {
   const updateMovement = useCallback(
     async (id: string, updates: Partial<Movement>) => {
       try {
-        const dbUpdates: any = {};
+        // Buscar movimento antigo para calcular diferença de saldo
+        const { data: oldMovement } = await supabase
+          .from("movements")
+          .select("*")
+          .eq("id", id)
+          .single();
+
+        const dbUpdates: any = {
+          data_atualizacao: new Date().toISOString(),
+        };
+
         if (updates.data) dbUpdates.data = updates.data;
         if (updates.descricao) dbUpdates.descricao = updates.descricao;
         if (updates.naturezaId) dbUpdates.natureza_id = updates.naturezaId;
         if (updates.contaId) dbUpdates.conta_id = updates.contaId;
-        if (updates.valor) dbUpdates.valor = updates.valor;
+        if (updates.valor !== undefined) dbUpdates.valor = updates.valor;
         if (updates.tipo) dbUpdates.tipo = updates.tipo;
-        dbUpdates.data_atualizacao = new Date().toISOString();
 
         const { error } = await supabase
           .from("movements")
           .update(dbUpdates)
           .eq("id", id);
-        
+
         if (error) throw error;
+
+        // Ajustar saldo da conta se valor ou tipo mudou
+        if (oldMovement && (updates.valor !== undefined || updates.tipo || updates.contaId)) {
+          // Reverter saldo antigo
+          const oldAccountId = updates.contaId || oldMovement.conta_id;
+          const { data: oldAcc } = await supabase
+            .from("accounts")
+            .select("saldo_atual")
+            .eq("id", oldMovement.conta_id)
+            .single();
+
+          if (oldAcc) {
+            const reverted = oldMovement.tipo === "receita"
+              ? oldAcc.saldo_atual - oldMovement.valor
+              : oldAcc.saldo_atual + oldMovement.valor;
+
+            await supabase
+              .from("accounts")
+              .update({ saldo_atual: reverted })
+              .eq("id", oldMovement.conta_id);
+          }
+
+          // Aplicar novo saldo
+          const newValor = updates.valor !== undefined ? updates.valor : oldMovement.valor;
+          const newTipo = updates.tipo || oldMovement.tipo;
+          const newContaId = updates.contaId || oldMovement.conta_id;
+
+          const { data: newAcc } = await supabase
+            .from("accounts")
+            .select("saldo_atual")
+            .eq("id", newContaId)
+            .single();
+
+          if (newAcc) {
+            const newBalance = newTipo === "receita"
+              ? newAcc.saldo_atual + newValor
+              : newAcc.saldo_atual - newValor;
+
+            await supabase
+              .from("accounts")
+              .update({ saldo_atual: newBalance })
+              .eq("id", newContaId);
+          }
+        }
+
         await loadMovements();
       } catch (error) {
         console.error("Erro ao atualizar movimento:", error);
