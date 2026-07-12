@@ -41,6 +41,15 @@ export default function NaturesScreen() {
     setShowModal(true);
   };
 
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditingId(null);
+  };
+
+  const handleResetForm = () => {
+    setFormData({ nome: "", tipo: "receita", cor: "#10B981", icone: "💰" });
+  };
+
   const handleSave = async () => {
     if (!formData.nome) {
       Alert.alert("Erro", "Preencha o nome da natureza");
@@ -72,19 +81,20 @@ export default function NaturesScreen() {
 
   const handleDelete = (id: string) => {
     Alert.alert("Confirmar", "Deseja deletar esta natureza?", [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Deletar",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await deleteNature(id);
-            await loadNatures();
-          } catch (error) {
-            Alert.alert("Erro", "Falha ao deletar natureza");
-          }
-        },
-      },
+          { text: "Cancelar", style: "cancel" },
+          {
+            text: "Deletar",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                await deleteNature(id);
+                await loadNatures();
+                handleCloseModal();
+              } catch (error) {
+                Alert.alert("Erro", "Falha ao deletar natureza");
+              }
+            },
+          },
     ]);
   };
 
@@ -240,11 +250,26 @@ export default function NaturesScreen() {
 
               <View className="flex-row gap-3">
                 <Pressable
-                  onPress={() => setShowModal(false)}
+                  onPress={handleCloseModal}
                   className="flex-1 py-3 px-4 rounded-lg bg-surface border border-border"
                 >
                   <Text className="text-center text-foreground font-semibold">Cancelar</Text>
                 </Pressable>
+                {editingId ? (
+                  <Pressable
+                    onPress={() => handleDelete(editingId)}
+                    className="flex-1 py-3 px-4 rounded-lg bg-error"
+                  >
+                    <Text className="text-center text-background font-semibold">Excluir</Text>
+                  </Pressable>
+                ) : (
+                  <Pressable
+                    onPress={handleResetForm}
+                    className="flex-1 py-3 px-4 rounded-lg bg-surface border border-border"
+                  >
+                    <Text className="text-center text-foreground font-semibold">Limpar</Text>
+                  </Pressable>
+                )}
                 <Pressable
                   onPress={handleSave}
                   className="flex-1 py-3 px-4 rounded-lg bg-primary"

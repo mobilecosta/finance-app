@@ -56,6 +56,22 @@ export default function MovementsScreen() {
     setShowModal(true);
   };
 
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditingId(null);
+  };
+
+  const handleResetForm = () => {
+    setFormData({
+      data: new Date().toISOString().split("T")[0],
+      descricao: "",
+      naturezaId: "",
+      contaId: "",
+      valor: "",
+      tipo: "despesa",
+    });
+  };
+
   const handleSave = async () => {
     if (!formData.descricao || !formData.naturezaId || !formData.contaId || !formData.valor) {
       Alert.alert("Erro", "Preencha todos os campos");
@@ -97,19 +113,20 @@ export default function MovementsScreen() {
 
   const handleDelete = (id: string) => {
     Alert.alert("Confirmar", "Deseja deletar este movimento?", [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Deletar",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await deleteMovement(id);
-            await loadMovements();
-          } catch (error) {
-            Alert.alert("Erro", "Falha ao deletar movimento");
-          }
-        },
-      },
+          { text: "Cancelar", style: "cancel" },
+          {
+            text: "Deletar",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                await deleteMovement(id);
+                await loadMovements();
+                handleCloseModal();
+              } catch (error) {
+                Alert.alert("Erro", "Falha ao deletar movimento");
+              }
+            },
+          },
     ]);
   };
 
@@ -328,11 +345,26 @@ export default function MovementsScreen() {
 
               <View className="flex-row gap-3 pb-8">
                 <Pressable
-                  onPress={() => setShowModal(false)}
+                  onPress={handleCloseModal}
                   className="flex-1 py-3 px-4 rounded-lg bg-surface border border-border"
                 >
                   <Text className="text-center text-foreground font-semibold">Cancelar</Text>
                 </Pressable>
+                {editingId ? (
+                  <Pressable
+                    onPress={() => handleDelete(editingId)}
+                    className="flex-1 py-3 px-4 rounded-lg bg-error"
+                  >
+                    <Text className="text-center text-background font-semibold">Excluir</Text>
+                  </Pressable>
+                ) : (
+                  <Pressable
+                    onPress={handleResetForm}
+                    className="flex-1 py-3 px-4 rounded-lg bg-surface border border-border"
+                  >
+                    <Text className="text-center text-foreground font-semibold">Limpar</Text>
+                  </Pressable>
+                )}
                 <Pressable
                   onPress={handleSave}
                   className="flex-1 py-3 px-4 rounded-lg bg-primary"
