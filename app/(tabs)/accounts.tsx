@@ -128,15 +128,15 @@ export default function AccountsScreen() {
         <View className="flex-row gap-2">
           <Pressable
             onPress={() => handleOpenModal(item)}
-            className="px-3 py-2 bg-primary rounded"
+            className="px-3 py-2 rounded-lg bg-primary border border-primary"
           >
-            <Text className="text-white text-sm">Editar</Text>
+            <Text className="text-background text-sm font-semibold">Editar</Text>
           </Pressable>
           <Pressable
             onPress={() => handleDelete(item.id)}
-            className="px-3 py-2 bg-error rounded"
+            className="px-3 py-2 rounded-lg bg-error"
           >
-            <Text className="text-white text-sm">Deletar</Text>
+            <Text className="text-background text-sm font-semibold">Excluir</Text>
           </Pressable>
         </View>
       </View>
@@ -177,39 +177,36 @@ export default function AccountsScreen() {
         <Modal visible={showModal} animationType="slide" transparent>
           <View className="flex-1 bg-black/50 justify-end">
             <View className="bg-background rounded-t-2xl p-6 pb-8" style={{ maxHeight: "90%" }}>
-              <View className="mb-4 gap-3">
-                <Text className="text-2xl font-bold text-foreground">
+              <View className="mb-5">
+                <Text className="text-2xl font-bold text-foreground mb-3">
                   {editingId ? "Editar Conta" : "Nova Conta"}
                 </Text>
-                <View className="gap-3">
+                <View className="gap-2">
                   <Pressable
                     onPress={handleSave}
                     className="py-3 px-4 rounded-lg bg-primary"
                   >
-                    <Text className="text-center text-background font-semibold">Salvar</Text>
+                    <Text className="text-center text-background text-sm font-semibold">
+                      {editingId ? "Alterar" : "Incluir"}
+                    </Text>
                   </Pressable>
-                  <View className="flex-row gap-3">
+                  <View className="flex-row gap-2">
                     <Pressable
                       onPress={handleCloseModal}
                       className="flex-1 py-3 px-4 rounded-lg bg-surface border border-border"
                     >
-                      <Text className="text-center text-foreground font-semibold">Cancelar</Text>
+                      <Text className="text-center text-foreground text-sm font-semibold">
+                        Cancelar
+                      </Text>
                     </Pressable>
-                    {editingId ? (
-                      <Pressable
-                        onPress={() => handleDelete(editingId)}
-                        className="flex-1 py-3 px-4 rounded-lg bg-error"
-                      >
-                        <Text className="text-center text-background font-semibold">Excluir</Text>
-                      </Pressable>
-                    ) : (
-                      <Pressable
-                        onPress={handleResetForm}
-                        className="flex-1 py-3 px-4 rounded-lg bg-surface border border-border"
-                      >
-                        <Text className="text-center text-foreground font-semibold">Limpar</Text>
-                      </Pressable>
-                    )}
+                    <Pressable
+                      onPress={editingId ? () => handleDelete(editingId) : handleResetForm}
+                      className={`flex-1 py-3 px-4 rounded-lg ${editingId ? "bg-error" : "bg-surface border border-border"}`}
+                    >
+                      <Text className={`text-center text-sm font-semibold ${editingId ? "text-background" : "text-foreground"}`}>
+                        {editingId ? "Excluir" : "Limpar"}
+                      </Text>
+                    </Pressable>
                   </View>
                 </View>
               </View>
