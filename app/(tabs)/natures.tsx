@@ -181,9 +181,39 @@ export default function NaturesScreen() {
         <Modal visible={showModal} animationType="slide" transparent>
           <View className="flex-1 bg-black/50 justify-end">
             <View className="bg-background rounded-t-2xl p-6 pb-8" style={{ maxHeight: "90%" }}>
-              <Text className="text-2xl font-bold text-foreground mb-4">
-                {editingId ? "Editar Natureza" : "Nova Natureza"}
-              </Text>
+              <View className="mb-4 gap-3">
+                <Text className="text-2xl font-bold text-foreground">
+                  {editingId ? "Editar Natureza" : "Nova Natureza"}
+                </Text>
+                <View className="gap-3">
+                  <Pressable onPress={handleSave} className="py-3 px-4 rounded-lg bg-primary">
+                    <Text className="text-center text-background font-semibold">Salvar</Text>
+                  </Pressable>
+                  <View className="flex-row gap-3">
+                    <Pressable
+                      onPress={handleCloseModal}
+                      className="flex-1 py-3 px-4 rounded-lg bg-surface border border-border"
+                    >
+                      <Text className="text-center text-foreground font-semibold">Cancelar</Text>
+                    </Pressable>
+                    {editingId ? (
+                      <Pressable
+                        onPress={() => handleDelete(editingId)}
+                        className="flex-1 py-3 px-4 rounded-lg bg-error"
+                      >
+                        <Text className="text-center text-background font-semibold">Excluir</Text>
+                      </Pressable>
+                    ) : (
+                      <Pressable
+                        onPress={handleResetForm}
+                        className="flex-1 py-3 px-4 rounded-lg bg-surface border border-border"
+                      >
+                        <Text className="text-center text-foreground font-semibold">Limpar</Text>
+                      </Pressable>
+                    )}
+                  </View>
+                </View>
+              </View>
 
               <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
                 <Text className="text-sm text-muted mb-2">Nome</Text>
@@ -249,35 +279,6 @@ export default function NaturesScreen() {
                   ))}
                 </View>
               </ScrollView>
-
-              <View className="gap-3 pt-4">
-                <Pressable onPress={handleSave} className="py-3 px-4 rounded-lg bg-primary">
-                  <Text className="text-center text-background font-semibold">Salvar</Text>
-                </Pressable>
-                <View className="flex-row gap-3">
-                  <Pressable
-                    onPress={handleCloseModal}
-                    className="flex-1 py-3 px-4 rounded-lg bg-surface border border-border"
-                  >
-                    <Text className="text-center text-foreground font-semibold">Cancelar</Text>
-                  </Pressable>
-                  {editingId ? (
-                    <Pressable
-                      onPress={() => handleDelete(editingId)}
-                      className="flex-1 py-3 px-4 rounded-lg bg-error"
-                    >
-                      <Text className="text-center text-background font-semibold">Excluir</Text>
-                    </Pressable>
-                  ) : (
-                    <Pressable
-                      onPress={handleResetForm}
-                      className="flex-1 py-3 px-4 rounded-lg bg-surface border border-border"
-                    >
-                      <Text className="text-center text-foreground font-semibold">Limpar</Text>
-                    </Pressable>
-                  )}
-                </View>
-              </View>
             </View>
           </View>
         </Modal>
