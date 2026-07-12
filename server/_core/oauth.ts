@@ -9,6 +9,14 @@ function getQueryParam(req: Request, key: string): string | undefined {
   return typeof value === "string" ? value : undefined;
 }
 
+function toIsoString(value: string | Date | null | undefined) {
+  if (!value) {
+    return new Date().toISOString();
+  }
+
+  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+}
+
 async function syncUser(userInfo: {
   openId?: string | null;
   name?: string | null;
@@ -48,7 +56,7 @@ function buildUserResponse(
         name?: string | null;
         email?: string | null;
         loginMethod?: string | null;
-        lastSignedIn?: Date | null;
+        lastSignedIn?: Date | string | null;
       },
 ) {
   return {
@@ -57,7 +65,7 @@ function buildUserResponse(
     name: user?.name ?? null,
     email: user?.email ?? null,
     loginMethod: user?.loginMethod ?? null,
-    lastSignedIn: (user?.lastSignedIn ?? new Date()).toISOString(),
+    lastSignedIn: toIsoString(user?.lastSignedIn),
   };
 }
 

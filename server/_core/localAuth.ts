@@ -9,6 +9,14 @@ function normalizeUsername(username: string) {
   return username.trim().toLowerCase();
 }
 
+function toIsoString(value: string | Date | null | undefined) {
+  if (!value) {
+    return new Date().toISOString();
+  }
+
+  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+}
+
 function getBodyString(body: unknown, key: "username" | "password" | "name") {
   if (!body || typeof body !== "object") return undefined;
   const value = (body as Record<string, unknown>)[key];
@@ -22,7 +30,7 @@ function buildUserResponse(user: NonNullable<Awaited<ReturnType<typeof getUserBy
     name: user.name,
     email: user.email,
     loginMethod: user.loginMethod,
-    lastSignedIn: user.lastSignedIn.toISOString(),
+    lastSignedIn: toIsoString(user.lastSignedIn),
   };
 }
 
