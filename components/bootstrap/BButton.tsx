@@ -16,7 +16,8 @@ type Variant =
   | "outline-success"
   | "outline-danger"
   | "outline-warning"
-  | "outline-info";
+  | "outline-info"
+  | "link";
 
 type Size = "sm" | "md" | "lg";
 
@@ -43,13 +44,17 @@ export function BButton({
   const { s, c } = useBootstrapStyles();
 
   const isOutline = variant.startsWith("outline-");
+  const isLink = variant === "link";
   const baseColor = isOutline ? variant.replace("outline-", "") : variant;
   const themeColor = c[baseColor.toUpperCase()] || c.PRIMARY;
 
   const buttonStyle: any[] = [s.btn];
   const textStyle: any[] = [s.btnText];
 
-  if (!isOutline) {
+  if (isLink) {
+    buttonStyle.push({ backgroundColor: "transparent", borderColor: "transparent" });
+    textStyle.push({ color: c.PRIMARY });
+  } else if (!isOutline) {
     buttonStyle.push({ backgroundColor: themeColor, borderColor: themeColor });
     textStyle.push({ color: c.WHITE });
   } else {

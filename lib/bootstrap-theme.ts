@@ -1,3 +1,4 @@
+import { StyleSheet } from "react-native";
 import BootstrapStyleSheet from "react-native-bootstrap-styles";
 import { useState, useEffect } from "react";
 
@@ -120,7 +121,12 @@ const bootstrapStyleSheet = new BootstrapStyleSheet(
   customClasses,
 );
 
-export const { s, c } = bootstrapStyleSheet;
+const flattenedStyles = Object.fromEntries(
+  Object.entries(bootstrapStyleSheet.s).map(([key, value]) => [key, StyleSheet.flatten(value)]),
+);
+
+export const s = flattenedStyles;
+export const c = bootstrapStyleSheet.c;
 
 export function useBootstrapStyles() {
   const [, forceUpdate] = useState(0);

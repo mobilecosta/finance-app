@@ -11,7 +11,7 @@ const tabs = [
   { name: "natures", title: "Categorias", icon: "tag.fill" },
   { name: "accounts", title: "Contas", icon: "creditcard.fill" },
   { name: "reports", title: "Relatórios", icon: "doc.text.fill" },
-];
+] as const;
 
 function CustomTabBar({ state, navigation }: { state: any; navigation: any }) {
   const { s, c } = useBootstrapStyles();

@@ -39,18 +39,18 @@ export function BModal({
       {...props}
     >
       <View style={[s.modal, { justifyContent: "flex-end" }]}>
-        <View style={s.modalDialog}>
-          <View style={s.modalContent}>
+        <View style={[s.modalDialog]}>
+          <View style={[s.modalContent]}>
             {title ? (
-              <View style={s.modalHeader}>
+              <View style={[s.modalHeader]}>
                 <Text style={[s.modalTitle, s.h5]}>{title}</Text>
-                <TouchableOpacity onPress={onClose} style={s.modalHeaderClose}>
+                <TouchableOpacity onPress={onClose} style={[s.modalHeaderClose]}>
                   <Text style={{ fontSize: 20, fontWeight: "bold" }}>×</Text>
                 </TouchableOpacity>
               </View>
             ) : null}
-            <ScrollView style={s.modalBody}>{children}</ScrollView>
-            {footer ? <View style={s.modalFooter}>{footer}</View> : null}
+            <ScrollView style={[s.modalBody]}>{children}</ScrollView>
+            {footer ? <View style={[s.modalFooter]}>{footer}</View> : null}
           </View>
         </View>
       </View>

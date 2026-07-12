@@ -22,9 +22,9 @@ export function BCard({ children, header, footer, style, variant = "default", ..
 
   return (
     <View style={cardStyle} {...props}>
-      {header ? <View style={s.cardHeader}>{header}</View> : null}
-      <View style={s.cardBody}>{children}</View>
-      {footer ? <View style={s.cardFooter}>{footer}</View> : null}
+      {header ? <View style={[s.cardHeader]}>{header}</View> : null}
+      <View style={[s.cardBody]}>{children}</View>
+      {footer ? <View style={[s.cardFooter]}>{footer}</View> : null}
     </View>
   );
 }
@@ -36,7 +36,7 @@ export interface BCardTitleProps {
 export function BCardTitle({ children }: BCardTitleProps) {
   const { s } = useBootstrapStyles();
   return (
-    <View style={s.cardTitle}>
+    <View style={[s.cardTitle]}>
       <Text style={[s.h5]}>{children}</Text>
     </View>
   );

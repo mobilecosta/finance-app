@@ -56,11 +56,11 @@ export default function HomeScreen() {
 
   return (
     <ScreenContainer className="flex-1 bg-background">
-      <ScrollView style={s.flex1} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+      <ScrollView style={[s.flex1]} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
         <Text style={[s.h3, { color: c.BODY_COLOR }, s.mb4]}>Resumo Financeiro</Text>
 
         <BCard variant="primary" style={{ borderRadius: 16, marginBottom: 16 }}>
-          <Text style={[s.text, { color: c.WHITE, opacity: 0.8 }]}Saldo Total</Text>
+          <Text style={[s.text, { color: c.WHITE, opacity: 0.8 }]}>Saldo Total</Text>
           <Text style={[s.h3, { color: c.WHITE }]}>{formatCurrency(totals.balance)}</Text>
         </BCard>
 
@@ -111,7 +111,7 @@ export default function HomeScreen() {
                     key={index}
                     style={[s.flexRow, s.justifyContentBetween, s.alignItemsCenter, s.mb2]}
                   >
-                    <View style={s.flexRow}>
+                    <View style={[s.flexRow]}>
                       <View
                         style={{
                           width: 12,
@@ -132,7 +132,7 @@ export default function HomeScreen() {
               </View>
             </>
           ) : (
-            <View style={s.py5}>
+            <View style={[s.py5]}>
               <Text style={[s.text, s.textMuted, s.fontItalic]}>
                 Nenhuma despesa registrada para exibir o gráfico.
               </Text>
@@ -140,7 +140,7 @@ export default function HomeScreen() {
           )}
         </BCard>
 
-        <View style={s.mt4}>
+        <View style={[s.mt4]}>
           <Text style={[s.h5, { color: c.BODY_COLOR }, s.mb3]}>Suas Contas</Text>
           {accounts.map((account) => (
             <BCard key={account.id} style={{ borderRadius: 12, marginBottom: 12 }}>

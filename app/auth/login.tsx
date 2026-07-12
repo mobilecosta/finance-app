@@ -95,7 +95,7 @@ export default function LoginScreen() {
 
   return (
     <ScreenContainer className="bg-background">
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={s.flex1}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={[s.flex1]}>
         <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={[s.px4, s.justifyContentCenter]}>
           <View style={[s.alignItemsCenter, s.mb5]}>
             <Text style={{ fontSize: 48 }}>💰</Text>
@@ -136,7 +136,7 @@ export default function LoginScreen() {
               block
               loading={loading}
               onPress={handleAuth}
-              style={s.mt2}
+              style={[s.mt2]}
               title={isSignUp ? "Finalizar Cadastro" : "Acessar Conta"}
             />
 
@@ -148,7 +148,7 @@ export default function LoginScreen() {
                   ? "Já possui uma conta? Entre aqui"
                   : "Não tem uma conta? Cadastre-se agora"
               }
-              style={s.mt3}
+              style={[s.mt3]}
             />
           </BCard>
 
