@@ -237,142 +237,143 @@ export default function MovementsScreen() {
         {/* Modal de Formulário */}
         <Modal visible={showModal} animationType="slide" transparent>
           <View className="flex-1 bg-black/50 justify-end">
-            <ScrollView className="bg-background rounded-t-2xl p-6">
+            <View className="bg-background rounded-t-2xl p-6 pb-8" style={{ maxHeight: "90%" }}>
               <Text className="text-2xl font-bold text-foreground mb-4">
                 {editingId ? "Editar Movimento" : "Novo Movimento"}
               </Text>
 
-              <Text className="text-sm text-muted mb-2">Data</Text>
-              <TextInput
-                className="border border-border rounded-lg px-4 py-3 mb-4 text-foreground"
-                placeholder="YYYY-MM-DD"
-                value={formData.data}
-                onChangeText={(text) => setFormData({ ...formData, data: text })}
-                placeholderTextColor="#687076"
-              />
+              <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+                <Text className="text-sm text-muted mb-2">Data</Text>
+                <TextInput
+                  className="border border-border rounded-lg px-4 py-3 mb-4 text-foreground"
+                  placeholder="YYYY-MM-DD"
+                  value={formData.data}
+                  onChangeText={(text) => setFormData({ ...formData, data: text })}
+                  placeholderTextColor="#687076"
+                />
 
-              <Text className="text-sm text-muted mb-2">Descrição</Text>
-              <TextInput
-                className="border border-border rounded-lg px-4 py-3 mb-4 text-foreground"
-                placeholder="Ex: Compras no supermercado"
-                value={formData.descricao}
-                onChangeText={(text) => setFormData({ ...formData, descricao: text })}
-                placeholderTextColor="#687076"
-              />
+                <Text className="text-sm text-muted mb-2">Descrição</Text>
+                <TextInput
+                  className="border border-border rounded-lg px-4 py-3 mb-4 text-foreground"
+                  placeholder="Ex: Compras no supermercado"
+                  value={formData.descricao}
+                  onChangeText={(text) => setFormData({ ...formData, descricao: text })}
+                  placeholderTextColor="#687076"
+                />
 
-              <Text className="text-sm text-muted mb-2">Tipo</Text>
-              <View className="flex-row gap-2 mb-4">
-                {(["receita", "despesa"] as const).map((tipo) => (
-                  <Pressable
-                    key={tipo}
-                    onPress={() => setFormData({ ...formData, tipo })}
-                    className={`flex-1 py-2 px-3 rounded-lg border ${
-                      formData.tipo === tipo
-                        ? "bg-primary border-primary"
-                        : "bg-surface border-border"
-                    }`}
-                  >
-                    <Text
-                      className={`text-center text-sm font-semibold ${
-                        formData.tipo === tipo ? "text-background" : "text-foreground"
-                      }`}
-                    >
-                      {tipo === "receita" ? "Receita" : "Despesa"}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              <Text className="text-sm text-muted mb-2">Natureza</Text>
-              <View className="border border-border rounded-lg mb-4 max-h-32">
-                <ScrollView>
-                  {natures.map((nature) => (
+                <Text className="text-sm text-muted mb-2">Tipo</Text>
+                <View className="flex-row gap-2 mb-4">
+                  {(["receita", "despesa"] as const).map((tipo) => (
                     <Pressable
-                      key={nature.id}
-                      onPress={() => setFormData({ ...formData, naturezaId: nature.id })}
-                      className={`px-4 py-3 border-b border-border ${
-                        formData.naturezaId === nature.id ? "bg-primary/10" : ""
+                      key={tipo}
+                      onPress={() => setFormData({ ...formData, tipo })}
+                      className={`flex-1 py-2 px-3 rounded-lg border ${
+                        formData.tipo === tipo
+                          ? "bg-primary border-primary"
+                          : "bg-surface border-border"
                       }`}
                     >
                       <Text
-                        className={`${
-                          formData.naturezaId === nature.id
-                            ? "text-primary font-semibold"
-                            : "text-foreground"
+                        className={`text-center text-sm font-semibold ${
+                          formData.tipo === tipo ? "text-background" : "text-foreground"
                         }`}
                       >
-                        {nature.icone} {nature.nome}
+                        {tipo === "receita" ? "Receita" : "Despesa"}
                       </Text>
                     </Pressable>
                   ))}
-                </ScrollView>
-              </View>
+                </View>
 
-              <Text className="text-sm text-muted mb-2">Conta</Text>
-              <View className="border border-border rounded-lg mb-4 max-h-32">
-                <ScrollView>
-                  {accounts.map((account) => (
-                    <Pressable
-                      key={account.id}
-                      onPress={() => setFormData({ ...formData, contaId: account.id })}
-                      className={`px-4 py-3 border-b border-border ${
-                        formData.contaId === account.id ? "bg-primary/10" : ""
-                      }`}
-                    >
-                      <Text
-                        className={`${
-                          formData.contaId === account.id
-                            ? "text-primary font-semibold"
-                            : "text-foreground"
+                <Text className="text-sm text-muted mb-2">Natureza</Text>
+                <View className="border border-border rounded-lg mb-4 max-h-32">
+                  <ScrollView>
+                    {natures.map((nature) => (
+                      <Pressable
+                        key={nature.id}
+                        onPress={() => setFormData({ ...formData, naturezaId: nature.id })}
+                        className={`px-4 py-3 border-b border-border ${
+                          formData.naturezaId === nature.id ? "bg-primary/10" : ""
                         }`}
                       >
-                        {account.nome}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </ScrollView>
-              </View>
+                        <Text
+                          className={`${
+                            formData.naturezaId === nature.id
+                              ? "text-primary font-semibold"
+                              : "text-foreground"
+                          }`}
+                        >
+                          {nature.icone} {nature.nome}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </View>
 
-              <Text className="text-sm text-muted mb-2">Valor</Text>
-              <TextInput
-                className="border border-border rounded-lg px-4 py-3 mb-6 text-foreground"
-                placeholder="0.00"
-                value={formData.valor}
-                onChangeText={(text) => setFormData({ ...formData, valor: text })}
-                keyboardType="decimal-pad"
-                placeholderTextColor="#687076"
-              />
+                <Text className="text-sm text-muted mb-2">Conta</Text>
+                <View className="border border-border rounded-lg mb-4 max-h-32">
+                  <ScrollView>
+                    {accounts.map((account) => (
+                      <Pressable
+                        key={account.id}
+                        onPress={() => setFormData({ ...formData, contaId: account.id })}
+                        className={`px-4 py-3 border-b border-border ${
+                          formData.contaId === account.id ? "bg-primary/10" : ""
+                        }`}
+                      >
+                        <Text
+                          className={`${
+                            formData.contaId === account.id
+                              ? "text-primary font-semibold"
+                              : "text-foreground"
+                          }`}
+                        >
+                          {account.nome}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </View>
 
-              <View className="flex-row gap-3 pb-8">
-                <Pressable
-                  onPress={handleCloseModal}
-                  className="flex-1 py-3 px-4 rounded-lg bg-surface border border-border"
-                >
-                  <Text className="text-center text-foreground font-semibold">Cancelar</Text>
-                </Pressable>
-                {editingId ? (
-                  <Pressable
-                    onPress={() => handleDelete(editingId)}
-                    className="flex-1 py-3 px-4 rounded-lg bg-error"
-                  >
-                    <Text className="text-center text-background font-semibold">Excluir</Text>
-                  </Pressable>
-                ) : (
-                  <Pressable
-                    onPress={handleResetForm}
-                    className="flex-1 py-3 px-4 rounded-lg bg-surface border border-border"
-                  >
-                    <Text className="text-center text-foreground font-semibold">Limpar</Text>
-                  </Pressable>
-                )}
-                <Pressable
-                  onPress={handleSave}
-                  className="flex-1 py-3 px-4 rounded-lg bg-primary"
-                >
+                <Text className="text-sm text-muted mb-2">Valor</Text>
+                <TextInput
+                  className="border border-border rounded-lg px-4 py-3 mb-4 text-foreground"
+                  placeholder="0.00"
+                  value={formData.valor}
+                  onChangeText={(text) => setFormData({ ...formData, valor: text })}
+                  keyboardType="decimal-pad"
+                  placeholderTextColor="#687076"
+                />
+              </ScrollView>
+
+              <View className="gap-3 pt-4">
+                <Pressable onPress={handleSave} className="py-3 px-4 rounded-lg bg-primary">
                   <Text className="text-center text-background font-semibold">Salvar</Text>
                 </Pressable>
+                <View className="flex-row gap-3">
+                  <Pressable
+                    onPress={handleCloseModal}
+                    className="flex-1 py-3 px-4 rounded-lg bg-surface border border-border"
+                  >
+                    <Text className="text-center text-foreground font-semibold">Cancelar</Text>
+                  </Pressable>
+                  {editingId ? (
+                    <Pressable
+                      onPress={() => handleDelete(editingId)}
+                      className="flex-1 py-3 px-4 rounded-lg bg-error"
+                    >
+                      <Text className="text-center text-background font-semibold">Excluir</Text>
+                    </Pressable>
+                  ) : (
+                    <Pressable
+                      onPress={handleResetForm}
+                      className="flex-1 py-3 px-4 rounded-lg bg-surface border border-border"
+                    >
+                      <Text className="text-center text-foreground font-semibold">Limpar</Text>
+                    </Pressable>
+                  )}
+                </View>
               </View>
-            </ScrollView>
+            </View>
           </View>
         </Modal>
       </View>

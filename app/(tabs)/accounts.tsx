@@ -176,81 +176,85 @@ export default function AccountsScreen() {
 
         <Modal visible={showModal} animationType="slide" transparent>
           <View className="flex-1 bg-black/50 justify-end">
-            <View className="bg-background rounded-t-2xl p-6 pb-8">
+            <View className="bg-background rounded-t-2xl p-6 pb-8" style={{ maxHeight: "90%" }}>
               <Text className="text-2xl font-bold text-foreground mb-4">
                 {editingId ? "Editar Conta" : "Nova Conta"}
               </Text>
 
-              <Text className="text-sm text-muted mb-2">Nome da Conta</Text>
-              <TextInput
-                className="border border-border rounded-lg px-4 py-3 mb-4 text-foreground"
-                placeholder="Ex: Nubank, Itaú, Carteira"
-                value={formData.nome}
-                onChangeText={(text) => setFormData({ ...formData, nome: text })}
-                placeholderTextColor="#687076"
-              />
+              <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+                <Text className="text-sm text-muted mb-2">Nome da Conta</Text>
+                <TextInput
+                  className="border border-border rounded-lg px-4 py-3 mb-4 text-foreground"
+                  placeholder="Ex: Nubank, Itaú, Carteira"
+                  value={formData.nome}
+                  onChangeText={(text) => setFormData({ ...formData, nome: text })}
+                  placeholderTextColor="#687076"
+                />
 
-              <Text className="text-sm text-muted mb-2">Tipo</Text>
-              <View className="flex-row gap-2 mb-4">
-                {["corrente", "poupança", "investimento"].map((tipo) => (
-                  <Pressable
-                    key={tipo}
-                    onPress={() => setFormData({ ...formData, tipo: tipo as any })}
-                    className={`flex-1 py-2 px-1 rounded-lg border ${
-                      formData.tipo === tipo
-                        ? "bg-primary border-primary"
-                        : "bg-surface border-border"
-                    }`}
-                  >
-                    <Text
-                      className={`text-center text-xs font-semibold capitalize ${
-                        formData.tipo === tipo ? "text-background" : "text-foreground"
+                <Text className="text-sm text-muted mb-2">Tipo</Text>
+                <View className="flex-row gap-2 mb-4">
+                  {["corrente", "poupança", "investimento"].map((tipo) => (
+                    <Pressable
+                      key={tipo}
+                      onPress={() => setFormData({ ...formData, tipo: tipo as any })}
+                      className={`flex-1 py-2 px-1 rounded-lg border ${
+                        formData.tipo === tipo
+                          ? "bg-primary border-primary"
+                          : "bg-surface border-border"
                       }`}
                     >
-                      {tipo}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
+                      <Text
+                        className={`text-center text-xs font-semibold capitalize ${
+                          formData.tipo === tipo ? "text-background" : "text-foreground"
+                        }`}
+                      >
+                        {tipo}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
 
-              <Text className="text-sm text-muted mb-2">Saldo Inicial</Text>
-              <TextInput
-                className="border border-border rounded-lg px-4 py-3 mb-6 text-foreground"
-                placeholder="0.00"
-                value={formData.saldoInicial}
-                onChangeText={(text) => setFormData({ ...formData, saldoInicial: text })}
-                keyboardType="decimal-pad"
-                placeholderTextColor="#687076"
-              />
+                <Text className="text-sm text-muted mb-2">Saldo Inicial</Text>
+                <TextInput
+                  className="border border-border rounded-lg px-4 py-3 mb-4 text-foreground"
+                  placeholder="0.00"
+                  value={formData.saldoInicial}
+                  onChangeText={(text) => setFormData({ ...formData, saldoInicial: text })}
+                  keyboardType="decimal-pad"
+                  placeholderTextColor="#687076"
+                />
+              </ScrollView>
 
-              <View className="flex-row gap-3">
-                <Pressable
-                  onPress={handleCloseModal}
-                  className="flex-1 py-3 px-4 rounded-lg bg-surface border border-border"
-                >
-                  <Text className="text-center text-foreground font-semibold">Cancelar</Text>
-                </Pressable>
-                {editingId ? (
-                  <Pressable
-                    onPress={() => handleDelete(editingId)}
-                    className="flex-1 py-3 px-4 rounded-lg bg-error"
-                  >
-                    <Text className="text-center text-background font-semibold">Excluir</Text>
-                  </Pressable>
-                ) : (
-                  <Pressable
-                    onPress={handleResetForm}
-                    className="flex-1 py-3 px-4 rounded-lg bg-surface border border-border"
-                  >
-                    <Text className="text-center text-foreground font-semibold">Limpar</Text>
-                  </Pressable>
-                )}
+              <View className="gap-3 pt-4">
                 <Pressable
                   onPress={handleSave}
-                  className="flex-1 py-3 px-4 rounded-lg bg-primary"
+                  className="py-3 px-4 rounded-lg bg-primary"
                 >
                   <Text className="text-center text-background font-semibold">Salvar</Text>
                 </Pressable>
+                <View className="flex-row gap-3">
+                  <Pressable
+                    onPress={handleCloseModal}
+                    className="flex-1 py-3 px-4 rounded-lg bg-surface border border-border"
+                  >
+                    <Text className="text-center text-foreground font-semibold">Cancelar</Text>
+                  </Pressable>
+                  {editingId ? (
+                    <Pressable
+                      onPress={() => handleDelete(editingId)}
+                      className="flex-1 py-3 px-4 rounded-lg bg-error"
+                    >
+                      <Text className="text-center text-background font-semibold">Excluir</Text>
+                    </Pressable>
+                  ) : (
+                    <Pressable
+                      onPress={handleResetForm}
+                      className="flex-1 py-3 px-4 rounded-lg bg-surface border border-border"
+                    >
+                      <Text className="text-center text-foreground font-semibold">Limpar</Text>
+                    </Pressable>
+                  )}
+                </View>
               </View>
             </View>
           </View>

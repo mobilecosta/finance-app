@@ -180,102 +180,103 @@ export default function NaturesScreen() {
         {/* Modal de Formulário */}
         <Modal visible={showModal} animationType="slide" transparent>
           <View className="flex-1 bg-black/50 justify-end">
-            <View className="bg-background rounded-t-2xl p-6 pb-8">
+            <View className="bg-background rounded-t-2xl p-6 pb-8" style={{ maxHeight: "90%" }}>
               <Text className="text-2xl font-bold text-foreground mb-4">
                 {editingId ? "Editar Natureza" : "Nova Natureza"}
               </Text>
 
-              <Text className="text-sm text-muted mb-2">Nome</Text>
-              <TextInput
-                className="border border-border rounded-lg px-4 py-3 mb-4 text-foreground"
-                placeholder="Ex: Alimentação"
-                value={formData.nome}
-                onChangeText={(text) => setFormData({ ...formData, nome: text })}
-                placeholderTextColor="#687076"
-              />
+              <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+                <Text className="text-sm text-muted mb-2">Nome</Text>
+                <TextInput
+                  className="border border-border rounded-lg px-4 py-3 mb-4 text-foreground"
+                  placeholder="Ex: Alimentação"
+                  value={formData.nome}
+                  onChangeText={(text) => setFormData({ ...formData, nome: text })}
+                  placeholderTextColor="#687076"
+                />
 
-              <Text className="text-sm text-muted mb-2">Tipo</Text>
-              <View className="flex-row gap-2 mb-4">
-                {(["receita", "despesa"] as const).map((tipo) => (
-                  <Pressable
-                    key={tipo}
-                    onPress={() => setFormData({ ...formData, tipo })}
-                    className={`flex-1 py-2 px-3 rounded-lg border ${
-                      formData.tipo === tipo
-                        ? "bg-primary border-primary"
-                        : "bg-surface border-border"
-                    }`}
-                  >
-                    <Text
-                      className={`text-center text-sm font-semibold ${
-                        formData.tipo === tipo ? "text-background" : "text-foreground"
+                <Text className="text-sm text-muted mb-2">Tipo</Text>
+                <View className="flex-row gap-2 mb-4">
+                  {(["receita", "despesa"] as const).map((tipo) => (
+                    <Pressable
+                      key={tipo}
+                      onPress={() => setFormData({ ...formData, tipo })}
+                      className={`flex-1 py-2 px-3 rounded-lg border ${
+                        formData.tipo === tipo
+                          ? "bg-primary border-primary"
+                          : "bg-surface border-border"
                       }`}
                     >
-                      {tipo === "receita" ? "Receita" : "Despesa"}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
+                      <Text
+                        className={`text-center text-sm font-semibold ${
+                          formData.tipo === tipo ? "text-background" : "text-foreground"
+                        }`}
+                      >
+                        {tipo === "receita" ? "Receita" : "Despesa"}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
 
-              <Text className="text-sm text-muted mb-2">Cor</Text>
-              <View className="flex-row gap-2 mb-4 flex-wrap">
-                {COLORS.map((color) => (
-                  <Pressable
-                    key={color}
-                    onPress={() => setFormData({ ...formData, cor: color })}
-                    className={`w-12 h-12 rounded-full border-2 ${
-                      formData.cor === color ? "border-foreground" : "border-transparent"
-                    }`}
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </View>
+                <Text className="text-sm text-muted mb-2">Cor</Text>
+                <View className="flex-row gap-2 mb-4 flex-wrap">
+                  {COLORS.map((color) => (
+                    <Pressable
+                      key={color}
+                      onPress={() => setFormData({ ...formData, cor: color })}
+                      className={`w-12 h-12 rounded-full border-2 ${
+                        formData.cor === color ? "border-foreground" : "border-transparent"
+                      }`}
+                      style={{ backgroundColor: color }}
+                    />
+                  ))}
+                </View>
 
-              <Text className="text-sm text-muted mb-2">Ícone</Text>
-              <View className="flex-row gap-2 mb-6 flex-wrap">
-                {EMOJIS.map((emoji) => (
-                  <Pressable
-                    key={emoji}
-                    onPress={() => setFormData({ ...formData, icone: emoji })}
-                    className={`w-12 h-12 rounded-lg border-2 items-center justify-center ${
-                      formData.icone === emoji
-                        ? "border-primary bg-primary/10"
-                        : "border-border bg-surface"
-                    }`}
-                  >
-                    <Text className="text-2xl">{emoji}</Text>
-                  </Pressable>
-                ))}
-              </View>
+                <Text className="text-sm text-muted mb-2">Ícone</Text>
+                <View className="flex-row gap-2 mb-6 flex-wrap">
+                  {EMOJIS.map((emoji) => (
+                    <Pressable
+                      key={emoji}
+                      onPress={() => setFormData({ ...formData, icone: emoji })}
+                      className={`w-12 h-12 rounded-lg border-2 items-center justify-center ${
+                        formData.icone === emoji
+                          ? "border-primary bg-primary/10"
+                          : "border-border bg-surface"
+                      }`}
+                    >
+                      <Text className="text-2xl">{emoji}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </ScrollView>
 
-              <View className="flex-row gap-3">
-                <Pressable
-                  onPress={handleCloseModal}
-                  className="flex-1 py-3 px-4 rounded-lg bg-surface border border-border"
-                >
-                  <Text className="text-center text-foreground font-semibold">Cancelar</Text>
-                </Pressable>
-                {editingId ? (
-                  <Pressable
-                    onPress={() => handleDelete(editingId)}
-                    className="flex-1 py-3 px-4 rounded-lg bg-error"
-                  >
-                    <Text className="text-center text-background font-semibold">Excluir</Text>
-                  </Pressable>
-                ) : (
-                  <Pressable
-                    onPress={handleResetForm}
-                    className="flex-1 py-3 px-4 rounded-lg bg-surface border border-border"
-                  >
-                    <Text className="text-center text-foreground font-semibold">Limpar</Text>
-                  </Pressable>
-                )}
-                <Pressable
-                  onPress={handleSave}
-                  className="flex-1 py-3 px-4 rounded-lg bg-primary"
-                >
+              <View className="gap-3 pt-4">
+                <Pressable onPress={handleSave} className="py-3 px-4 rounded-lg bg-primary">
                   <Text className="text-center text-background font-semibold">Salvar</Text>
                 </Pressable>
+                <View className="flex-row gap-3">
+                  <Pressable
+                    onPress={handleCloseModal}
+                    className="flex-1 py-3 px-4 rounded-lg bg-surface border border-border"
+                  >
+                    <Text className="text-center text-foreground font-semibold">Cancelar</Text>
+                  </Pressable>
+                  {editingId ? (
+                    <Pressable
+                      onPress={() => handleDelete(editingId)}
+                      className="flex-1 py-3 px-4 rounded-lg bg-error"
+                    >
+                      <Text className="text-center text-background font-semibold">Excluir</Text>
+                    </Pressable>
+                  ) : (
+                    <Pressable
+                      onPress={handleResetForm}
+                      className="flex-1 py-3 px-4 rounded-lg bg-surface border border-border"
+                    >
+                      <Text className="text-center text-foreground font-semibold">Limpar</Text>
+                    </Pressable>
+                  )}
+                </View>
               </View>
             </View>
           </View>
