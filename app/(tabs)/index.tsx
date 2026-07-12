@@ -5,15 +5,18 @@ import { useNatures } from "@/lib/contexts/NatureContext";
 import { useAccounts } from "@/lib/contexts/AccountContext";
 import { PieChart } from "react-native-gifted-charts";
 import { useMemo } from "react";
+import { BCard, BBadge } from "@/components/bootstrap";
+import { BRow, BCol } from "@/components/bootstrap";
+import { useBootstrapStyles } from "@/lib/bootstrap-theme";
 
 export default function HomeScreen() {
   const { movements } = useMovements();
   const { natures } = useNatures();
   const { accounts } = useAccounts();
+  const { s, c } = useBootstrapStyles();
 
   const screenWidth = Dimensions.get("window").width;
 
-  // Calcular totais
   const totals = useMemo(() => {
     const income = movements
       .filter((m) => m.tipo === "receita")
@@ -24,10 +27,9 @@ export default function HomeScreen() {
     return { income, expense, balance: income - expense };
   }, [movements]);
 
-  // Preparar dados do gráfico por natureza (apenas despesas)
   const chartData = useMemo(() => {
     const expensesByNature: Record<string, number> = {};
-    
+
     movements
       .filter((m) => m.tipo === "despesa")
       .forEach((m) => {
@@ -54,30 +56,34 @@ export default function HomeScreen() {
 
   return (
     <ScreenContainer className="flex-1 bg-background">
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-        <Text className="text-3xl font-bold text-foreground mb-6">Resumo Financeiro</Text>
+      <ScrollView style={s.flex1} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+        <Text style={[s.h3, { color: c.BODY_COLOR }, s.mb4]}>Resumo Financeiro</Text>
 
-        {/* Cards de Saldo */}
-        <View className="bg-primary p-6 rounded-3xl shadow-sm mb-6">
-          <Text className="text-background/80 text-sm font-medium mb-1">Saldo Total</Text>
-          <Text className="text-background text-3xl font-bold">{formatCurrency(totals.balance)}</Text>
-        </View>
+        <BCard variant="primary" style={{ borderRadius: 16, marginBottom: 16 }}>
+          <Text style={[s.text, { color: c.WHITE, opacity: 0.8 }]}Saldo Total</Text>
+          <Text style={[s.h3, { color: c.WHITE }]}>{formatCurrency(totals.balance)}</Text>
+        </BCard>
 
-        <View className="flex-row gap-4 mb-8">
-          <View className="flex-1 bg-surface p-4 rounded-2xl border border-border">
-            <Text className="text-muted text-xs mb-1">Receitas</Text>
-            <Text className="text-income font-bold text-lg">{formatCurrency(totals.income)}</Text>
+        <BRow style={{ marginBottom: 16 }}>
+          <BCol size={6} style={{ paddingRight: 8 }}>
+            <BCard style={{ borderRadius: 12 }}>
+              <Text style={[s.text, s.textMuted, s.mb1]}>Receitas</Text>
+              <Text style={[s.h5, { color: c.SUCCESS }]}>{formatCurrency(totals.income)}</Text>
+            </BCard>
+          </BCol>
+          <BCol size={6} style={{ paddingLeft: 8 }}>
+            <BCard style={{ borderRadius: 12 }}>
+              <Text style={[s.text, s.textMuted, s.mb1]}>Despesas</Text>
+              <Text style={[s.h5, { color: c.DANGER }]}>{formatCurrency(totals.expense)}</Text>
+            </BCard>
+          </BCol>
+        </BRow>
+
+        <BCard style={{ borderRadius: 16, alignItems: "center" }}>
+          <View style={[s.w100, s.mb4]}>
+            <Text style={[s.h5, { color: c.BODY_COLOR }]}>Gastos por Categoria</Text>
           </View>
-          <View className="flex-1 bg-surface p-4 rounded-2xl border border-border">
-            <Text className="text-muted text-xs mb-1">Despesas</Text>
-            <Text className="text-expense font-bold text-lg">{formatCurrency(totals.expense)}</Text>
-          </View>
-        </View>
 
-        {/* Gráfico de Gastos por Natureza */}
-        <View className="bg-surface p-6 rounded-3xl border border-border items-center">
-          <Text className="text-lg font-bold text-foreground mb-6 self-start">Gastos por Categoria</Text>
-          
           {chartData.length > 0 ? (
             <>
               <PieChart
@@ -86,50 +92,66 @@ export default function HomeScreen() {
                 sectionAutoFocus
                 radius={90}
                 innerRadius={60}
-                innerCircleColor={"#FFFFFF"}
+                innerCircleColor={c.WHITE}
                 centerLabelComponent={() => {
                   return (
-                    <View style={{ justifyContent: 'center', alignItems: 'center' }}>
-                      <Text style={{ fontSize: 22, color: 'black', fontWeight: 'bold' }}>
+                    <View style={{ justifyContent: "center", alignItems: "center" }}>
+                      <Text style={{ fontSize: 22, color: c.BODY_COLOR, fontWeight: "bold" }}>
                         {Math.round((totals.expense / (totals.income || 1)) * 100)}%
                       </Text>
-                      <Text style={{ fontSize: 12, color: 'black' }}>Gasto</Text>
+                      <Text style={{ fontSize: 12, color: c.BODY_COLOR }}>Gasto</Text>
                     </View>
                   );
                 }}
               />
-              
-              {/* Legenda */}
-              <View className="w-full mt-6 gap-2">
+
+              <View style={[s.w100, s.mt4]}>
                 {chartData.map((item, index) => (
-                  <View key={index} className="flex-row justify-between items-center">
-                    <View className="flex-row items-center gap-2">
-                      <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: item.color }} />
-                      <Text className="text-foreground text-sm">{item.text} {item.label}</Text>
+                  <View
+                    key={index}
+                    style={[s.flexRow, s.justifyContentBetween, s.alignItemsCenter, s.mb2]}
+                  >
+                    <View style={s.flexRow}>
+                      <View
+                        style={{
+                          width: 12,
+                          height: 12,
+                          borderRadius: 6,
+                          backgroundColor: item.color,
+                          marginRight: 8,
+                          alignSelf: "center",
+                        }}
+                      />
+                      <Text style={[s.text, { color: c.BODY_COLOR }]}>
+                        {item.text} {item.label}
+                      </Text>
                     </View>
-                    <Text className="text-muted text-sm font-medium">{formatCurrency(item.value)}</Text>
+                    <Text style={[s.text, s.textMuted, s.fontWeightBold]}>{formatCurrency(item.value)}</Text>
                   </View>
                 ))}
               </View>
             </>
           ) : (
-            <View className="py-10">
-              <Text className="text-muted italic">Nenhuma despesa registrada para exibir o gráfico.</Text>
+            <View style={s.py5}>
+              <Text style={[s.text, s.textMuted, s.fontItalic]}>
+                Nenhuma despesa registrada para exibir o gráfico.
+              </Text>
             </View>
           )}
-        </View>
+        </BCard>
 
-        {/* Resumo de Contas */}
-        <View className="mt-8">
-          <Text className="text-lg font-bold text-foreground mb-4">Suas Contas</Text>
+        <View style={s.mt4}>
+          <Text style={[s.h5, { color: c.BODY_COLOR }, s.mb3]}>Suas Contas</Text>
           {accounts.map((account) => (
-            <View key={account.id} className="bg-surface p-4 rounded-2xl border border-border mb-3 flex-row justify-between items-center">
-              <View>
-                <Text className="text-foreground font-semibold">{account.nome}</Text>
-                <Text className="text-muted text-xs capitalize">{account.tipo}</Text>
+            <BCard key={account.id} style={{ borderRadius: 12, marginBottom: 12 }}>
+              <View style={[s.flexRow, s.justifyContentBetween, s.alignItemsCenter]}>
+                <View>
+                  <Text style={[s.h6, { color: c.BODY_COLOR }]}>{account.nome}</Text>
+                  <Text style={[s.text, s.textMuted, s.textCapitalize]}>{account.tipo}</Text>
+                </View>
+                <Text style={[s.h6, { color: c.BODY_COLOR }]}>{formatCurrency(account.saldoAtual)}</Text>
               </View>
-              <Text className="text-foreground font-bold">{formatCurrency(account.saldoAtual)}</Text>
-            </View>
+            </BCard>
           ))}
         </View>
       </ScrollView>

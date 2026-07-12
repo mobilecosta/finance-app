@@ -1,74 +1,74 @@
 import { Tabs, Redirect } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/lib/contexts/AuthContext";
-
-import { HapticTab } from "@/components/haptic-tab";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { Platform } from "react-native";
-import { useColors } from "@/hooks/use-colors";
+import { View, Text, TouchableOpacity, Platform } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useBootstrapStyles } from "@/lib/bootstrap-theme";
+
+const tabs = [
+  { name: "index", title: "Início", icon: "house.fill" },
+  { name: "movements", title: "Movimentos", icon: "list.bullet" },
+  { name: "natures", title: "Categorias", icon: "tag.fill" },
+  { name: "accounts", title: "Contas", icon: "creditcard.fill" },
+  { name: "reports", title: "Relatórios", icon: "doc.text.fill" },
+];
+
+function CustomTabBar({ state, navigation }: { state: any; navigation: any }) {
+  const { s, c } = useBootstrapStyles();
+  const insets = useSafeAreaInsets();
+  const bottomPadding = Platform.OS === "web" ? 8 : Math.max(insets.bottom, 8);
+
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        borderTopWidth: 1,
+        borderTopColor: c.BORDER_COLOR,
+        backgroundColor: c.BODY_BG,
+        paddingTop: 6,
+        paddingBottom: bottomPadding,
+        height: 56 + bottomPadding,
+      }}
+    >
+      {tabs.map((tab, index) => {
+        const isFocused = state.index === index;
+        const color = isFocused ? c.PRIMARY : c.SECONDARY;
+        return (
+          <TouchableOpacity
+            key={tab.name}
+            onPress={() => navigation.navigate(tab.name)}
+            style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+          >
+            <IconSymbol size={24} name={tab.icon} color={color} />
+            <Text style={{ fontSize: 11, color, marginTop: 2 }}>{tab.title}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
 
 export default function TabLayout() {
   const { session, isLoading } = useAuth();
-  const colors = useColors();
 
   if (!isLoading && !session) {
     return <Redirect href="/auth/login" />;
   }
-  const insets = useSafeAreaInsets();
-  const bottomPadding = Platform.OS === "web" ? 12 : Math.max(insets.bottom, 8);
-  const tabBarHeight = 56 + bottomPadding;
 
   return (
     <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: colors.tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarStyle: {
-          paddingTop: 8,
-          paddingBottom: bottomPadding,
-          height: tabBarHeight,
-          backgroundColor: colors.background,
-          borderTopColor: colors.border,
-          borderTopWidth: 0.5,
-        },
-      }}
+      screenOptions={{ headerShown: false }}
+      tabBar={(props) => <CustomTabBar state={props.state} navigation={props.navigation} />}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Início",
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="movements"
-        options={{
-          title: "Movimentos",
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="list.bullet" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="natures"
-        options={{
-          title: "Categorias",
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="tag.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="accounts"
-        options={{
-          title: "Contas",
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="creditcard.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="reports"
-        options={{
-          title: "Relatórios",
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="doc.text.fill" color={color} />,
-        }}
-      />
+      {tabs.map((tab) => (
+        <Tabs.Screen
+          key={tab.name}
+          name={tab.name}
+          options={{
+            title: tab.title,
+          }}
+        />
+      ))}
     </Tabs>
   );
 }
