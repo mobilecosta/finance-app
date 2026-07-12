@@ -18,7 +18,8 @@
     "ios": "expo start --ios",
     "qr": "node scripts/generate_qr.mjs",
     "build:web": "npx expo export --platform web",
-    "vercel-build": "rm -rf node_modules/.cache && pnpm build:web"
+    "vercel-build": "rm -rf node_modules/.cache && pnpm build:web",
+    "build:apk": "eas build --platform android --profile preview"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
