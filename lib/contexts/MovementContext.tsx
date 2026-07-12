@@ -1,9 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
-const generateId = () => {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-};
+import { supabase } from "../supabase/client";
+import { useAuth } from "./AuthContext";
 
 export interface Movement {
   id: string;
@@ -15,17 +12,16 @@ export interface Movement {
   tipo: "receita" | "despesa";
   dataCriacao: string;
   dataAtualizacao: string;
+  user_id: string;
 }
 
 interface MovementContextType {
   movements: Movement[];
   loading: boolean;
-  addMovement: (movement: Omit<Movement, "id" | "dataCriacao" | "dataAtualizacao">) => Promise<void>;
+  addMovement: (movement: Omit<Movement, "id" | "dataCriacao" | "dataAtualizacao" | "user_id">) => Promise<void>;
   updateMovement: (id: string, movement: Partial<Movement>) => Promise<void>;
   deleteMovement: (id: string) => Promise<void>;
   loadMovements: () => Promise<void>;
-  getMovementsByAccount: (accountId: string) => Movement[];
-  getMovementsByNature: (natureId: string) => Movement[];
 }
 
 const MovementContext = createContext<MovementContextType | undefined>(undefined);
@@ -33,79 +29,154 @@ const MovementContext = createContext<MovementContextType | undefined>(undefined
 export function MovementProvider({ children }: { children: React.ReactNode }) {
   const [movements, setMovements] = useState<Movement[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   const loadMovements = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
     try {
-      const data = await AsyncStorage.getItem("movements");
-      if (data) {
-        setMovements(JSON.parse(data));
-      }
+      const { data, error } = await supabase
+        .from("movements")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("data", { ascending: false });
+
+      if (error) throw error;
+
+      const mappedMovements = data.map(item => ({
+        id: item.id,
+        data: item.data,
+        descricao: item.descricao,
+        naturezaId: item.natureza_id,
+        contaId: item.conta_id,
+        valor: item.valor,
+        tipo: item.tipo,
+        dataCriacao: item.data_criacao,
+        dataAtualizacao: item.data_atualizacao,
+        user_id: item.user_id
+      }));
+
+      setMovements(mappedMovements as Movement[]);
     } catch (error) {
       console.error("Erro ao carregar movimentos:", error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     loadMovements();
   }, [loadMovements]);
 
-  const saveMovements = useCallback(async (newMovements: Movement[]) => {
-    try {
-      await AsyncStorage.setItem("movements", JSON.stringify(newMovements));
-      setMovements(newMovements);
-    } catch (error) {
-      console.error("Erro ao salvar movimentos:", error);
-    }
-  }, []);
-
   const addMovement = useCallback(
-    async (movement: Omit<Movement, "id" | "dataCriacao" | "dataAtualizacao">) => {
-      const now = new Date().toISOString();
-      const newMovement: Movement = {
-        ...movement,
-        id: generateId(),
-        dataCriacao: now,
-        dataAtualizacao: now,
-      };
-      await saveMovements([...movements, newMovement]);
+    async (movement: Omit<Movement, "id" | "dataCriacao" | "dataAtualizacao" | "user_id">) => {
+      if (!user) return;
+      try {
+        const { error } = await supabase.from("movements").insert([
+          {
+            data: movement.data,
+            descricao: movement.descricao,
+            natureza_id: movement.naturezaId,
+            conta_id: movement.contaId,
+            valor: movement.valor,
+            tipo: movement.tipo,
+            user_id: user.id,
+          },
+        ]);
+        if (error) throw error;
+        
+        // Atualizar saldo da conta
+        const { data: accountData, error: accountError } = await supabase
+          .from("accounts")
+          .select("saldo_atual")
+          .eq("id", movement.contaId)
+          .single();
+
+        if (!accountError && accountData) {
+          const newBalance = movement.tipo === "receita" 
+            ? accountData.saldo_atual + movement.valor 
+            : accountData.saldo_atual - movement.valor;
+          
+          await supabase
+            .from("accounts")
+            .update({ saldo_atual: newBalance })
+            .eq("id", movement.contaId);
+        }
+
+        await loadMovements();
+      } catch (error) {
+        console.error("Erro ao adicionar movimento:", error);
+        throw error;
+      }
     },
-    [movements, saveMovements]
+    [user, loadMovements]
   );
 
   const updateMovement = useCallback(
     async (id: string, updates: Partial<Movement>) => {
-      const updated = movements.map((mov) =>
-        mov.id === id
-          ? { ...mov, ...updates, dataAtualizacao: new Date().toISOString() }
-          : mov
-      );
-      await saveMovements(updated);
+      try {
+        const dbUpdates: any = {};
+        if (updates.data) dbUpdates.data = updates.data;
+        if (updates.descricao) dbUpdates.descricao = updates.descricao;
+        if (updates.naturezaId) dbUpdates.natureza_id = updates.naturezaId;
+        if (updates.contaId) dbUpdates.conta_id = updates.contaId;
+        if (updates.valor) dbUpdates.valor = updates.valor;
+        if (updates.tipo) dbUpdates.tipo = updates.tipo;
+        dbUpdates.data_atualizacao = new Date().toISOString();
+
+        const { error } = await supabase
+          .from("movements")
+          .update(dbUpdates)
+          .eq("id", id);
+        
+        if (error) throw error;
+        await loadMovements();
+      } catch (error) {
+        console.error("Erro ao atualizar movimento:", error);
+        throw error;
+      }
     },
-    [movements, saveMovements]
+    [loadMovements]
   );
 
   const deleteMovement = useCallback(
     async (id: string) => {
-      const filtered = movements.filter((mov) => mov.id !== id);
-      await saveMovements(filtered);
-    },
-    [movements, saveMovements]
-  );
+      try {
+        // Buscar o movimento antes de deletar para ajustar o saldo
+        const { data: movData } = await supabase
+          .from("movements")
+          .select("*")
+          .eq("id", id)
+          .single();
 
-  const getMovementsByAccount = useCallback(
-    (accountId: string) => {
-      return movements.filter((mov) => mov.contaId === accountId);
-    },
-    [movements]
-  );
+        if (movData) {
+          const { data: accData } = await supabase
+            .from("accounts")
+            .select("saldo_atual")
+            .eq("id", movData.conta_id)
+            .single();
 
-  const getMovementsByNature = useCallback(
-    (natureId: string) => {
-      return movements.filter((mov) => mov.naturezaId === natureId);
+          if (accData) {
+            const adjustedBalance = movData.tipo === "receita"
+              ? accData.saldo_atual - movData.valor
+              : accData.saldo_atual + movData.valor;
+
+            await supabase
+              .from("accounts")
+              .update({ saldo_atual: adjustedBalance })
+              .eq("id", movData.conta_id);
+          }
+        }
+
+        const { error } = await supabase.from("movements").delete().eq("id", id);
+        if (error) throw error;
+        await loadMovements();
+      } catch (error) {
+        console.error("Erro ao deletar movimento:", error);
+        throw error;
+      }
     },
-    [movements]
+    [loadMovements]
   );
 
   return (
@@ -117,8 +188,6 @@ export function MovementProvider({ children }: { children: React.ReactNode }) {
         updateMovement,
         deleteMovement,
         loadMovements,
-        getMovementsByAccount,
-        getMovementsByNature,
       }}
     >
       {children}
