@@ -96,7 +96,9 @@ export default function LoginScreen() {
   return (
     <ScreenContainer className="bg-background">
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={[s.flex1]}>
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={[s.px4, s.justifyContentCenter]}>
+        <ScrollView
+          contentContainerStyle={[s.px4, s.justifyContentCenter, { flexGrow: 1 }]}
+        >
           <View style={[s.alignItemsCenter, s.mb5]}>
             <Text style={{ fontSize: 48 }}>💰</Text>
             <Text style={[s.h3, { color: c.PRIMARY }]}>Finance App</Text>
