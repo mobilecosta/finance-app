@@ -116,6 +116,11 @@ const config = {
     typedRoutes: true,
     reactCompiler: true,
   },
+  extra: {
+    eas: {
+      projectId: "66943bca-2050-422b-86fc-5aec7cd75aef",
+    },
+  },
 };
 
 module.exports = config;
