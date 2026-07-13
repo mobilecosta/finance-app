@@ -3,11 +3,13 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useState, useCallback } from "react";
 import { useAccounts } from "@/lib/contexts/AccountContext";
 import { useFocusEffect } from "expo-router";
+import { confirmAction, formatCurrency, getErrorMessage, parseMoneyInput } from "@/lib/utils";
 
 export default function AccountsScreen() {
   const { accounts, loading, addAccount, updateAccount, deleteAccount, loadAccounts } = useAccounts();
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     nome: "",
     tipo: "corrente" as "corrente" | "poupança" | "investimento",
@@ -16,21 +18,28 @@ export default function AccountsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadAccounts();
+      void loadAccounts().catch(() => {
+        Alert.alert("Erro", "Falha ao carregar contas");
+      });
     }, [loadAccounts])
   );
 
-  const handleOpenModal = (account?: any) => {
+  const handleOpenModal = (account?: {
+    id: string;
+    nome: string;
+    tipo: "corrente" | "poupança" | "investimento";
+    saldoInicial: number;
+  }) => {
     if (account) {
       setEditingId(account.id);
       setFormData({
         nome: account.nome,
         tipo: account.tipo,
-        saldoInicial: account.saldoInicial.toString(),
+        saldoInicial: String(account.saldoInicial ?? 0),
       });
     } else {
       setEditingId(null);
-      setFormData({ nome: "", tipo: "corrente", saldoInicial: "" });
+      setFormData({ nome: "", tipo: "corrente", saldoInicial: "0" });
     }
     setShowModal(true);
   };
@@ -41,70 +50,72 @@ export default function AccountsScreen() {
   };
 
   const handleResetForm = () => {
-    setFormData({ nome: "", tipo: "corrente", saldoInicial: "" });
+    setFormData({ nome: "", tipo: "corrente", saldoInicial: "0" });
   };
 
   const handleSave = async () => {
-    if (!formData.nome || !formData.saldoInicial) {
-      Alert.alert("Erro", "Preencha todos os campos");
+    const nome = formData.nome.trim();
+    if (!nome) {
+      Alert.alert("Erro", "Informe o nome da conta");
       return;
     }
 
-    const saldo = parseFloat(formData.saldoInicial);
-    if (isNaN(saldo)) {
+    const saldo = parseMoneyInput(formData.saldoInicial);
+    if (!Number.isFinite(saldo)) {
       Alert.alert("Erro", "Saldo inicial inválido");
       return;
     }
 
+    setSaving(true);
     try {
       if (editingId) {
         await updateAccount(editingId, {
-          nome: formData.nome,
+          nome,
           tipo: formData.tipo,
           saldoInicial: saldo,
         });
       } else {
         await addAccount({
-          nome: formData.nome,
+          nome,
           tipo: formData.tipo,
           saldoInicial: saldo,
           saldoAtual: saldo,
         });
       }
-      setShowModal(false);
-      await loadAccounts();
+      handleCloseModal();
     } catch (error) {
-      Alert.alert("Erro", "Falha ao salvar conta");
+      Alert.alert("Erro", getErrorMessage(error, "Falha ao salvar conta"));
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleDelete = (id: string) => {
-    Alert.alert("Confirmar", "Deseja deletar esta conta? Todos os movimentos vinculados também serão afetados.", [
-          { text: "Cancelar", style: "cancel" },
-          {
-            text: "Deletar",
-            style: "destructive",
-            onPress: async () => {
-              try {
-                await deleteAccount(id);
-                await loadAccounts();
-                handleCloseModal();
-              } catch (error) {
-                Alert.alert("Erro", "Falha ao deletar conta");
-              }
-            },
-          },
-    ]);
+  const handleDelete = async (id: string) => {
+    const confirmed = await confirmAction(
+      "Confirmar",
+      "Deseja deletar esta conta? Todos os movimentos vinculados também serão afetados."
+    );
+    if (!confirmed) return;
+
+    try {
+      await deleteAccount(id);
+      handleCloseModal();
+    } catch (error) {
+      Alert.alert("Erro", getErrorMessage(error, "Falha ao deletar conta"));
+    }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
-  };
-
-  const renderAccountItem = ({ item }: { item: any }) => (
+  const renderAccountItem = ({
+    item,
+  }: {
+    item: {
+      id: string;
+      nome: string;
+      tipo: string;
+      saldoAtual: number;
+      saldoInicial: number;
+    };
+  }) => (
     <Pressable
       style={({ pressed }) => [
         {
@@ -123,17 +134,19 @@ export default function AccountsScreen() {
         <View className="flex-1">
           <Text className="text-lg font-semibold text-foreground">{item.nome}</Text>
           <Text className="text-sm text-muted mt-1 capitalize">{item.tipo}</Text>
-          <Text className="text-sm font-bold text-primary mt-1">{formatCurrency(item.saldoAtual)}</Text>
+          <Text className="text-sm font-bold text-primary mt-1">
+            {formatCurrency(item.saldoAtual)}
+          </Text>
         </View>
         <View className="flex-row gap-2">
           <Pressable
-            onPress={() => handleOpenModal(item)}
+            onPress={() => handleOpenModal(item as any)}
             className="px-3 py-2 rounded-lg bg-primary border border-primary"
           >
             <Text className="text-background text-sm font-semibold">Editar</Text>
           </Pressable>
           <Pressable
-            onPress={() => handleDelete(item.id)}
+            onPress={() => void handleDelete(item.id)}
             className="px-3 py-2 rounded-lg bg-error"
           >
             <Text className="text-background text-sm font-semibold">Excluir</Text>
@@ -183,11 +196,12 @@ export default function AccountsScreen() {
                 </Text>
                 <View className="gap-2">
                   <Pressable
-                    onPress={handleSave}
+                    onPress={() => void handleSave()}
+                    disabled={saving}
                     className="py-3 px-4 rounded-lg bg-primary"
                   >
                     <Text className="text-center text-background text-sm font-semibold">
-                      {editingId ? "Alterar" : "Incluir"}
+                      {saving ? "Salvando..." : editingId ? "Alterar" : "Incluir"}
                     </Text>
                   </Pressable>
                   <View className="flex-row gap-2">
@@ -200,10 +214,14 @@ export default function AccountsScreen() {
                       </Text>
                     </Pressable>
                     <Pressable
-                      onPress={editingId ? () => handleDelete(editingId) : handleResetForm}
+                      onPress={
+                        editingId ? () => void handleDelete(editingId) : handleResetForm
+                      }
                       className={`flex-1 py-3 px-4 rounded-lg ${editingId ? "bg-error" : "bg-surface border border-border"}`}
                     >
-                      <Text className={`text-center text-sm font-semibold ${editingId ? "text-background" : "text-foreground"}`}>
+                      <Text
+                        className={`text-center text-sm font-semibold ${editingId ? "text-background" : "text-foreground"}`}
+                      >
                         {editingId ? "Excluir" : "Limpar"}
                       </Text>
                     </Pressable>
@@ -223,10 +241,10 @@ export default function AccountsScreen() {
 
                 <Text className="text-sm text-muted mb-2">Tipo</Text>
                 <View className="flex-row gap-2 mb-4">
-                  {["corrente", "poupança", "investimento"].map((tipo) => (
+                  {(["corrente", "poupança", "investimento"] as const).map((tipo) => (
                     <Pressable
                       key={tipo}
-                      onPress={() => setFormData({ ...formData, tipo: tipo as any })}
+                      onPress={() => setFormData({ ...formData, tipo })}
                       className={`flex-1 py-2 px-1 rounded-lg border ${
                         formData.tipo === tipo
                           ? "bg-primary border-primary"
@@ -247,12 +265,18 @@ export default function AccountsScreen() {
                 <Text className="text-sm text-muted mb-2">Saldo Inicial</Text>
                 <TextInput
                   className="border border-border rounded-lg px-4 py-3 mb-4 text-foreground"
-                  placeholder="0.00"
+                  placeholder="0,00"
                   value={formData.saldoInicial}
                   onChangeText={(text) => setFormData({ ...formData, saldoInicial: text })}
                   keyboardType="decimal-pad"
                   placeholderTextColor="#687076"
                 />
+                {editingId ? (
+                  <Text className="text-xs text-muted mb-2">
+                    Ao alterar o saldo inicial, o saldo atual é ajustado pela mesma diferença,
+                    preservando o efeito dos movimentos.
+                  </Text>
+                ) : null}
               </ScrollView>
             </View>
           </View>

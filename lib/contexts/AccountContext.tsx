@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { supabase } from "../supabase/client";
 import { useAuth } from "./AuthContext";
+import { toNumber } from "../utils";
 
 export interface Account {
   id: string;
@@ -23,13 +24,30 @@ interface AccountContextType {
 
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
 
+function mapAccount(item: Record<string, unknown>): Account {
+  return {
+    id: String(item.id),
+    nome: String(item.nome ?? ""),
+    tipo: item.tipo as Account["tipo"],
+    saldoInicial: toNumber(item.saldo_inicial),
+    saldoAtual: toNumber(item.saldo_atual),
+    dataCriacao: String(item.data_criacao ?? ""),
+    user_id: String(item.user_id ?? ""),
+  };
+}
+
 export function AccountProvider({ children }: { children: React.ReactNode }) {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
   const loadAccounts = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setAccounts([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -39,19 +57,8 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         .order("nome", { ascending: true });
 
       if (error) throw error;
-      
-      // Mapear campos do banco para a interface (caso haja diferença de snake_case)
-      const mappedAccounts = data.map(item => ({
-        id: item.id,
-        nome: item.nome,
-        tipo: item.tipo,
-        saldoInicial: item.saldo_inicial,
-        saldoAtual: item.saldo_atual,
-        dataCriacao: item.data_criacao,
-        user_id: item.user_id
-      }));
 
-      setAccounts(mappedAccounts as Account[]);
+      setAccounts((data ?? []).map((item) => mapAccount(item as Record<string, unknown>)));
     } catch (error) {
       console.error("Erro ao carregar contas:", error);
     } finally {
@@ -60,68 +67,96 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   useEffect(() => {
-    loadAccounts();
+    void loadAccounts().catch(() => {
+      /* already logged */
+    });
   }, [loadAccounts]);
 
   const addAccount = useCallback(
     async (account: Omit<Account, "id" | "dataCriacao" | "user_id">) => {
-      if (!user) return;
-      try {
-        const { error } = await supabase.from("accounts").insert([
-          {
-            nome: account.nome,
-            tipo: account.tipo,
-            saldo_inicial: account.saldoInicial,
-            saldo_atual: account.saldoInicial, // Inicialmente igual
-            user_id: user.id,
-          },
-        ]);
-        if (error) throw error;
-        await loadAccounts();
-      } catch (error) {
-        console.error("Erro ao adicionar conta:", error);
-        throw error;
-      }
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const saldoInicial = toNumber(account.saldoInicial);
+      const { error } = await supabase.from("accounts").insert([
+        {
+          nome: account.nome.trim(),
+          tipo: account.tipo,
+          saldo_inicial: saldoInicial,
+          saldo_atual: toNumber(account.saldoAtual, saldoInicial),
+          user_id: user.id,
+        },
+      ]);
+
+      if (error) throw error;
+      await loadAccounts();
     },
     [user, loadAccounts]
   );
 
   const updateAccount = useCallback(
     async (id: string, updates: Partial<Account>) => {
-      try {
-        const dbUpdates: any = {};
-        if (updates.nome) dbUpdates.nome = updates.nome;
-        if (updates.tipo) dbUpdates.tipo = updates.tipo;
-        if (updates.saldoInicial !== undefined) dbUpdates.saldo_inicial = updates.saldoInicial;
-        if (updates.saldoAtual !== undefined) dbUpdates.saldo_atual = updates.saldoAtual;
+      if (!user) throw new Error("Usuário não autenticado");
 
-        const { error } = await supabase
-          .from("accounts")
-          .update(dbUpdates)
-          .eq("id", id);
-        
-        if (error) throw error;
-        await loadAccounts();
-      } catch (error) {
-        console.error("Erro ao atualizar conta:", error);
-        throw error;
+      const { data: current, error: fetchError } = await supabase
+        .from("accounts")
+        .select("*")
+        .eq("id", id)
+        .eq("user_id", user.id)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (!current) throw new Error("Conta não encontrada");
+
+      const dbUpdates: Record<string, unknown> = {};
+
+      if (updates.nome !== undefined) {
+        dbUpdates.nome = updates.nome.trim();
       }
+      if (updates.tipo !== undefined) {
+        dbUpdates.tipo = updates.tipo;
+      }
+
+      if (updates.saldoInicial !== undefined) {
+        const newInicial = toNumber(updates.saldoInicial);
+        const oldInicial = toNumber(current.saldo_inicial);
+        const oldAtual = toNumber(current.saldo_atual);
+        const delta = newInicial - oldInicial;
+        dbUpdates.saldo_inicial = newInicial;
+        // Preserve movement deltas: adjust current balance by the same change
+        dbUpdates.saldo_atual =
+          updates.saldoAtual !== undefined ? toNumber(updates.saldoAtual) : oldAtual + delta;
+      } else if (updates.saldoAtual !== undefined) {
+        dbUpdates.saldo_atual = toNumber(updates.saldoAtual);
+      }
+
+      if (Object.keys(dbUpdates).length === 0) return;
+
+      const { error } = await supabase
+        .from("accounts")
+        .update(dbUpdates)
+        .eq("id", id)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+      await loadAccounts();
     },
-    [loadAccounts]
+    [user, loadAccounts]
   );
 
   const deleteAccount = useCallback(
     async (id: string) => {
-      try {
-        const { error } = await supabase.from("accounts").delete().eq("id", id);
-        if (error) throw error;
-        await loadAccounts();
-      } catch (error) {
-        console.error("Erro ao deletar conta:", error);
-        throw error;
-      }
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const { error } = await supabase
+        .from("accounts")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+      await loadAccounts();
     },
-    [loadAccounts]
+    [user, loadAccounts]
   );
 
   return (

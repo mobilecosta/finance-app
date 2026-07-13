@@ -23,13 +23,30 @@ interface NatureContextType {
 
 const NatureContext = createContext<NatureContextType | undefined>(undefined);
 
+function mapNature(item: Record<string, unknown>): Nature {
+  return {
+    id: String(item.id),
+    nome: String(item.nome ?? ""),
+    tipo: item.tipo as Nature["tipo"],
+    cor: String(item.cor ?? "#10B981"),
+    icone: String(item.icone ?? "💰"),
+    dataCriacao: String(item.data_criacao ?? ""),
+    user_id: String(item.user_id ?? ""),
+  };
+}
+
 export function NatureProvider({ children }: { children: React.ReactNode }) {
   const [natures, setNatures] = useState<Nature[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
   const loadNatures = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setNatures([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -40,17 +57,7 @@ export function NatureProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
 
-      const mappedNatures = data.map(item => ({
-        id: item.id,
-        nome: item.nome,
-        tipo: item.tipo,
-        cor: item.cor,
-        icone: item.icone,
-        dataCriacao: item.data_criacao,
-        user_id: item.user_id
-      }));
-
-      setNatures(mappedNatures as Nature[]);
+      setNatures((data ?? []).map((item) => mapNature(item as Record<string, unknown>)));
     } catch (error) {
       console.error("Erro ao carregar naturezas:", error);
     } finally {
@@ -59,61 +66,69 @@ export function NatureProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   useEffect(() => {
-    loadNatures();
+    void loadNatures().catch(() => {
+      /* already logged */
+    });
   }, [loadNatures]);
 
   const addNature = useCallback(
     async (nature: Omit<Nature, "id" | "dataCriacao" | "user_id">) => {
-      if (!user) return;
-      try {
-        const { error } = await supabase.from("natures").insert([
-          {
-            nome: nature.nome,
-            tipo: nature.tipo,
-            cor: nature.cor,
-            icone: nature.icone,
-            user_id: user.id,
-          },
-        ]);
-        if (error) throw error;
-        await loadNatures();
-      } catch (error) {
-        console.error("Erro ao adicionar natureza:", error);
-        throw error;
-      }
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const { error } = await supabase.from("natures").insert([
+        {
+          nome: nature.nome.trim(),
+          tipo: nature.tipo,
+          cor: nature.cor,
+          icone: nature.icone,
+          user_id: user.id,
+        },
+      ]);
+
+      if (error) throw error;
+      await loadNatures();
     },
     [user, loadNatures]
   );
 
   const updateNature = useCallback(
     async (id: string, updates: Partial<Nature>) => {
-      try {
-        const { error } = await supabase
-          .from("natures")
-          .update(updates)
-          .eq("id", id);
-        if (error) throw error;
-        await loadNatures();
-      } catch (error) {
-        console.error("Erro ao atualizar natureza:", error);
-        throw error;
-      }
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const dbUpdates: Record<string, unknown> = {};
+      if (updates.nome !== undefined) dbUpdates.nome = updates.nome.trim();
+      if (updates.tipo !== undefined) dbUpdates.tipo = updates.tipo;
+      if (updates.cor !== undefined) dbUpdates.cor = updates.cor;
+      if (updates.icone !== undefined) dbUpdates.icone = updates.icone;
+
+      if (Object.keys(dbUpdates).length === 0) return;
+
+      const { error } = await supabase
+        .from("natures")
+        .update(dbUpdates)
+        .eq("id", id)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+      await loadNatures();
     },
-    [loadNatures]
+    [user, loadNatures]
   );
 
   const deleteNature = useCallback(
     async (id: string) => {
-      try {
-        const { error } = await supabase.from("natures").delete().eq("id", id);
-        if (error) throw error;
-        await loadNatures();
-      } catch (error) {
-        console.error("Erro ao deletar natureza:", error);
-        throw error;
-      }
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const { error } = await supabase
+        .from("natures")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+      await loadNatures();
     },
-    [loadNatures]
+    [user, loadNatures]
   );
 
   return (

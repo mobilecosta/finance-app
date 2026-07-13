@@ -3,15 +3,16 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useState, useCallback } from "react";
 import { useNatures } from "@/lib/contexts/NatureContext";
 import { useFocusEffect } from "expo-router";
+import { confirmAction, getErrorMessage } from "@/lib/utils";
 
 const COLORS = ["#10B981", "#3B82F6", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899"];
 const EMOJIS = ["💰", "💼", "🍔", "🚗", "🏥", "🎓", "🎮", "📚", "✈️", "🏠"];
 
 export default function NaturesScreen() {
-  const { natures, loading, addNature, updateNature, deleteNature, loadNatures } =
-    useNatures();
+  const { natures, loading, addNature, updateNature, deleteNature, loadNatures } = useNatures();
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     nome: "",
     tipo: "receita" as "receita" | "despesa",
@@ -21,11 +22,19 @@ export default function NaturesScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadNatures();
+      void loadNatures().catch(() => {
+        Alert.alert("Erro", "Falha ao carregar naturezas");
+      });
     }, [loadNatures])
   );
 
-  const handleOpenModal = (nature?: any) => {
+  const handleOpenModal = (nature?: {
+    id: string;
+    nome: string;
+    tipo: "receita" | "despesa";
+    cor: string;
+    icone: string;
+  }) => {
     if (nature) {
       setEditingId(nature.id);
       setFormData({
@@ -51,54 +60,60 @@ export default function NaturesScreen() {
   };
 
   const handleSave = async () => {
-    if (!formData.nome) {
+    const nome = formData.nome.trim();
+    if (!nome) {
       Alert.alert("Erro", "Preencha o nome da natureza");
       return;
     }
 
+    setSaving(true);
     try {
       if (editingId) {
         await updateNature(editingId, {
-          nome: formData.nome,
+          nome,
           tipo: formData.tipo,
           cor: formData.cor,
           icone: formData.icone,
         });
       } else {
         await addNature({
-          nome: formData.nome,
+          nome,
           tipo: formData.tipo,
           cor: formData.cor,
           icone: formData.icone,
         });
       }
-      setShowModal(false);
-      await loadNatures();
+      handleCloseModal();
     } catch (error) {
-      Alert.alert("Erro", "Falha ao salvar natureza");
+      Alert.alert("Erro", getErrorMessage(error, "Falha ao salvar natureza"));
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleDelete = (id: string) => {
-    Alert.alert("Confirmar", "Deseja deletar esta natureza?", [
-          { text: "Cancelar", style: "cancel" },
-          {
-            text: "Deletar",
-            style: "destructive",
-            onPress: async () => {
-              try {
-                await deleteNature(id);
-                await loadNatures();
-                handleCloseModal();
-              } catch (error) {
-                Alert.alert("Erro", "Falha ao deletar natureza");
-              }
-            },
-          },
-    ]);
+  const handleDelete = async (id: string) => {
+    const confirmed = await confirmAction("Confirmar", "Deseja deletar esta natureza?");
+    if (!confirmed) return;
+
+    try {
+      await deleteNature(id);
+      handleCloseModal();
+    } catch (error) {
+      Alert.alert("Erro", getErrorMessage(error, "Falha ao deletar natureza"));
+    }
   };
 
-  const renderNatureItem = ({ item }: { item: any }) => (
+  const renderNatureItem = ({
+    item,
+  }: {
+    item: {
+      id: string;
+      nome: string;
+      tipo: "receita" | "despesa";
+      cor: string;
+      icone: string;
+    };
+  }) => (
     <Pressable
       style={({ pressed }) => [
         {
@@ -136,7 +151,7 @@ export default function NaturesScreen() {
             <Text className="text-background text-sm font-semibold">Editar</Text>
           </Pressable>
           <Pressable
-            onPress={() => handleDelete(item.id)}
+            onPress={() => void handleDelete(item.id)}
             className="px-3 py-2 rounded-lg bg-error"
           >
             <Text className="text-background text-sm font-semibold">Excluir</Text>
@@ -177,7 +192,6 @@ export default function NaturesScreen() {
           <Text className="text-2xl text-background">+</Text>
         </Pressable>
 
-        {/* Modal de Formulário */}
         <Modal visible={showModal} animationType="slide" transparent>
           <View className="flex-1 bg-black/50 justify-end">
             <View className="bg-background rounded-t-2xl p-6 pb-8" style={{ maxHeight: "90%" }}>
@@ -186,9 +200,13 @@ export default function NaturesScreen() {
                   {editingId ? "Editar Natureza" : "Nova Natureza"}
                 </Text>
                 <View className="gap-2">
-                  <Pressable onPress={handleSave} className="py-3 px-4 rounded-lg bg-primary">
+                  <Pressable
+                    onPress={() => void handleSave()}
+                    disabled={saving}
+                    className="py-3 px-4 rounded-lg bg-primary"
+                  >
                     <Text className="text-center text-background text-sm font-semibold">
-                      {editingId ? "Alterar" : "Incluir"}
+                      {saving ? "Salvando..." : editingId ? "Alterar" : "Incluir"}
                     </Text>
                   </Pressable>
                   <View className="flex-row gap-2">
@@ -201,10 +219,14 @@ export default function NaturesScreen() {
                       </Text>
                     </Pressable>
                     <Pressable
-                      onPress={editingId ? () => handleDelete(editingId) : handleResetForm}
+                      onPress={
+                        editingId ? () => void handleDelete(editingId) : handleResetForm
+                      }
                       className={`flex-1 py-3 px-4 rounded-lg ${editingId ? "bg-error" : "bg-surface border border-border"}`}
                     >
-                      <Text className={`text-center text-sm font-semibold ${editingId ? "text-background" : "text-foreground"}`}>
+                      <Text
+                        className={`text-center text-sm font-semibold ${editingId ? "text-background" : "text-foreground"}`}
+                      >
                         {editingId ? "Excluir" : "Limpar"}
                       </Text>
                     </Pressable>
