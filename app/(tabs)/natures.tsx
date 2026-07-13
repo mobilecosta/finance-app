@@ -1,6 +1,14 @@
-import { ScrollView, Text, View, FlatList, Pressable, TextInput, Modal, Alert } from "react-native";
+import { ScrollView, Text, View, FlatList, Pressable, Modal, Alert } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
-import { CrudFab, CrudHeader, CrudPrimaryActions } from "@/components/crud-actions";
+import {
+  CrudChoiceGroup,
+  CrudColorSwatches,
+  CrudEmojiPicker,
+  CrudFab,
+  CrudField,
+  CrudHeader,
+  CrudPrimaryActions,
+} from "@/components/crud-actions";
 import { useState, useCallback } from "react";
 import { useNatures } from "@/lib/contexts/NatureContext";
 import { useFocusEffect } from "expo-router";
@@ -221,68 +229,43 @@ export default function NaturesScreen() {
               </View>
 
               <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-                <Text className="text-sm text-muted mb-2">Nome</Text>
-                <TextInput
-                  className="border border-border rounded-lg px-4 py-3 mb-4 text-foreground"
+                <CrudField
+                  label="Nome"
                   placeholder="Ex: Alimentação"
                   value={formData.nome}
                   onChangeText={(text) => setFormData({ ...formData, nome: text })}
-                  placeholderTextColor="#687076"
+                  autoCapitalize="words"
+                  returnKeyType="done"
                 />
 
-                <Text className="text-sm text-muted mb-2">Tipo</Text>
-                <View className="flex-row gap-2 mb-4">
-                  {(["receita", "despesa"] as const).map((tipo) => (
-                    <Pressable
-                      key={tipo}
-                      onPress={() => setFormData({ ...formData, tipo })}
-                      className={`flex-1 py-2 px-3 rounded-lg border ${
-                        formData.tipo === tipo
-                          ? "bg-primary border-primary"
-                          : "bg-surface border-border"
-                      }`}
-                    >
-                      <Text
-                        className={`text-center text-sm font-semibold ${
-                          formData.tipo === tipo ? "text-background" : "text-foreground"
-                        }`}
-                      >
-                        {tipo === "receita" ? "Receita" : "Despesa"}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
+                <CrudChoiceGroup
+                  label="Tipo"
+                  value={formData.tipo}
+                  onChange={(tipo) =>
+                    setFormData({
+                      ...formData,
+                      tipo: tipo as "receita" | "despesa",
+                    })
+                  }
+                  options={[
+                    { value: "receita", label: "Receita" },
+                    { value: "despesa", label: "Despesa" },
+                  ]}
+                />
 
-                <Text className="text-sm text-muted mb-2">Cor</Text>
-                <View className="flex-row gap-2 mb-4 flex-wrap">
-                  {COLORS.map((color) => (
-                    <Pressable
-                      key={color}
-                      onPress={() => setFormData({ ...formData, cor: color })}
-                      className={`w-12 h-12 rounded-full border-2 ${
-                        formData.cor === color ? "border-foreground" : "border-transparent"
-                      }`}
-                      style={{ backgroundColor: color }}
-                    />
-                  ))}
-                </View>
+                <CrudColorSwatches
+                  label="Cor"
+                  colors={COLORS}
+                  value={formData.cor}
+                  onChange={(cor) => setFormData({ ...formData, cor })}
+                />
 
-                <Text className="text-sm text-muted mb-2">Ícone</Text>
-                <View className="flex-row gap-2 mb-6 flex-wrap">
-                  {EMOJIS.map((emoji) => (
-                    <Pressable
-                      key={emoji}
-                      onPress={() => setFormData({ ...formData, icone: emoji })}
-                      className={`w-12 h-12 rounded-lg border-2 items-center justify-center ${
-                        formData.icone === emoji
-                          ? "border-primary bg-primary/10"
-                          : "border-border bg-surface"
-                      }`}
-                    >
-                      <Text className="text-2xl">{emoji}</Text>
-                    </Pressable>
-                  ))}
-                </View>
+                <CrudEmojiPicker
+                  label="Ícone"
+                  emojis={EMOJIS}
+                  value={formData.icone}
+                  onChange={(icone) => setFormData({ ...formData, icone })}
+                />
               </ScrollView>
             </View>
           </View>

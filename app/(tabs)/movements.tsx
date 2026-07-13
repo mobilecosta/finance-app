@@ -1,6 +1,13 @@
-import { ScrollView, Text, View, FlatList, Pressable, TextInput, Modal, Alert } from "react-native";
+import { ScrollView, Text, View, FlatList, Pressable, Modal, Alert } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
-import { CrudFab, CrudHeader, CrudPrimaryActions } from "@/components/crud-actions";
+import {
+  CrudChoiceGroup,
+  CrudFab,
+  CrudField,
+  CrudHeader,
+  CrudPrimaryActions,
+  CrudSelectList,
+} from "@/components/crud-actions";
 import { useMemo, useState, useCallback } from "react";
 import { useMovements } from "@/lib/contexts/MovementContext";
 import { useAccounts } from "@/lib/contexts/AccountContext";
@@ -313,121 +320,63 @@ export default function MovementsScreen() {
               </View>
 
               <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-                <Text className="text-sm text-muted mb-2">Data</Text>
-                <TextInput
-                  className="border border-border rounded-lg px-4 py-3 mb-4 text-foreground"
+                <CrudField
+                  label="Data"
                   placeholder="YYYY-MM-DD"
                   value={formData.data}
                   onChangeText={(text) => setFormData({ ...formData, data: text })}
-                  placeholderTextColor="#687076"
+                  autoCapitalize="none"
+                  returnKeyType="next"
                 />
 
-                <Text className="text-sm text-muted mb-2">Descrição</Text>
-                <TextInput
-                  className="border border-border rounded-lg px-4 py-3 mb-4 text-foreground"
+                <CrudField
+                  label="Descrição"
                   placeholder="Ex: Compras no supermercado"
                   value={formData.descricao}
                   onChangeText={(text) => setFormData({ ...formData, descricao: text })}
-                  placeholderTextColor="#687076"
+                  autoCapitalize="sentences"
+                  returnKeyType="next"
                 />
 
-                <Text className="text-sm text-muted mb-2">Tipo</Text>
-                <View className="flex-row gap-2 mb-4">
-                  {(["receita", "despesa"] as const).map((tipo) => (
-                    <Pressable
-                      key={tipo}
-                      onPress={() => handleTipoChange(tipo)}
-                      className={`flex-1 py-2 px-3 rounded-lg border ${
-                        formData.tipo === tipo
-                          ? "bg-primary border-primary"
-                          : "bg-surface border-border"
-                      }`}
-                    >
-                      <Text
-                        className={`text-center text-sm font-semibold ${
-                          formData.tipo === tipo ? "text-background" : "text-foreground"
-                        }`}
-                      >
-                        {tipo === "receita" ? "Receita" : "Despesa"}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
+                <CrudChoiceGroup
+                  label="Tipo"
+                  value={formData.tipo}
+                  onChange={(tipo) => handleTipoChange(tipo as "receita" | "despesa")}
+                  options={[
+                    { value: "receita", label: "Receita" },
+                    { value: "despesa", label: "Despesa" },
+                  ]}
+                />
 
-                <Text className="text-sm text-muted mb-2">Natureza</Text>
-                <View className="border border-border rounded-lg mb-4 max-h-32">
-                  {filteredNatures.length === 0 ? (
-                    <Text className="px-4 py-3 text-muted text-sm">
-                      Nenhuma natureza de {formData.tipo} cadastrada
-                    </Text>
-                  ) : (
-                    <ScrollView nestedScrollEnabled>
-                      {filteredNatures.map((nature) => (
-                        <Pressable
-                          key={nature.id}
-                          onPress={() =>
-                            setFormData({ ...formData, naturezaId: nature.id })
-                          }
-                          className={`px-4 py-3 border-b border-border ${
-                            formData.naturezaId === nature.id ? "bg-primary/10" : ""
-                          }`}
-                        >
-                          <Text
-                            className={`${
-                              formData.naturezaId === nature.id
-                                ? "text-primary font-semibold"
-                                : "text-foreground"
-                            }`}
-                          >
-                            {nature.icone} {nature.nome}
-                          </Text>
-                        </Pressable>
-                      ))}
-                    </ScrollView>
-                  )}
-                </View>
+                <CrudSelectList
+                  label="Natureza"
+                  value={formData.naturezaId}
+                  onChange={(naturezaId) => setFormData({ ...formData, naturezaId })}
+                  emptyText={`Nenhuma natureza de ${formData.tipo} cadastrada`}
+                  options={filteredNatures.map((nature) => ({
+                    id: nature.id,
+                    label: `${nature.icone} ${nature.nome}`,
+                  }))}
+                />
 
-                <Text className="text-sm text-muted mb-2">Conta</Text>
-                <View className="border border-border rounded-lg mb-4 max-h-32">
-                  {accounts.length === 0 ? (
-                    <Text className="px-4 py-3 text-muted text-sm">
-                      Nenhuma conta cadastrada
-                    </Text>
-                  ) : (
-                    <ScrollView nestedScrollEnabled>
-                      {accounts.map((account) => (
-                        <Pressable
-                          key={account.id}
-                          onPress={() =>
-                            setFormData({ ...formData, contaId: account.id })
-                          }
-                          className={`px-4 py-3 border-b border-border ${
-                            formData.contaId === account.id ? "bg-primary/10" : ""
-                          }`}
-                        >
-                          <Text
-                            className={`${
-                              formData.contaId === account.id
-                                ? "text-primary font-semibold"
-                                : "text-foreground"
-                            }`}
-                          >
-                            {account.nome}
-                          </Text>
-                        </Pressable>
-                      ))}
-                    </ScrollView>
-                  )}
-                </View>
+                <CrudSelectList
+                  label="Conta"
+                  value={formData.contaId}
+                  onChange={(contaId) => setFormData({ ...formData, contaId })}
+                  emptyText="Nenhuma conta cadastrada"
+                  options={accounts.map((account) => ({
+                    id: account.id,
+                    label: account.nome,
+                  }))}
+                />
 
-                <Text className="text-sm text-muted mb-2">Valor</Text>
-                <TextInput
-                  className="border border-border rounded-lg px-4 py-3 mb-4 text-foreground"
+                <CrudField
+                  label="Valor"
                   placeholder="0,00"
                   value={formData.valor}
                   onChangeText={(text) => setFormData({ ...formData, valor: text })}
                   keyboardType="decimal-pad"
-                  placeholderTextColor="#687076"
+                  returnKeyType="done"
                 />
               </ScrollView>
             </View>

@@ -1,6 +1,12 @@
-import { ScrollView, Text, View, FlatList, Pressable, TextInput, Modal, Alert } from "react-native";
+import { ScrollView, Text, View, FlatList, Pressable, Modal, Alert } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
-import { CrudFab, CrudHeader, CrudPrimaryActions } from "@/components/crud-actions";
+import {
+  CrudChoiceGroup,
+  CrudFab,
+  CrudField,
+  CrudHeader,
+  CrudPrimaryActions,
+} from "@/components/crud-actions";
 import { useState, useCallback } from "react";
 import { useAccounts } from "@/lib/contexts/AccountContext";
 import { useFocusEffect } from "expo-router";
@@ -216,53 +222,43 @@ export default function AccountsScreen() {
               </View>
 
               <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-                <Text className="text-sm text-muted mb-2">Nome da Conta</Text>
-                <TextInput
-                  className="border border-border rounded-lg px-4 py-3 mb-4 text-foreground"
+                <CrudField
+                  label="Nome da Conta"
                   placeholder="Ex: Nubank, Itaú, Carteira"
                   value={formData.nome}
                   onChangeText={(text) => setFormData({ ...formData, nome: text })}
-                  placeholderTextColor="#687076"
+                  autoCapitalize="words"
+                  returnKeyType="next"
                 />
 
-                <Text className="text-sm text-muted mb-2">Tipo</Text>
-                <View className="flex-row gap-2 mb-4">
-                  {(["corrente", "poupança", "investimento"] as const).map((tipo) => (
-                    <Pressable
-                      key={tipo}
-                      onPress={() => setFormData({ ...formData, tipo })}
-                      className={`flex-1 py-2 px-1 rounded-lg border ${
-                        formData.tipo === tipo
-                          ? "bg-primary border-primary"
-                          : "bg-surface border-border"
-                      }`}
-                    >
-                      <Text
-                        className={`text-center text-xs font-semibold capitalize ${
-                          formData.tipo === tipo ? "text-background" : "text-foreground"
-                        }`}
-                      >
-                        {tipo}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
+                <CrudChoiceGroup
+                  label="Tipo"
+                  value={formData.tipo}
+                  onChange={(tipo) =>
+                    setFormData({
+                      ...formData,
+                      tipo: tipo as "corrente" | "poupança" | "investimento",
+                    })
+                  }
+                  options={[
+                    { value: "corrente", label: "Corrente" },
+                    { value: "poupança", label: "Poupança" },
+                    { value: "investimento", label: "Investimento" },
+                  ]}
+                />
 
-                <Text className="text-sm text-muted mb-2">Saldo Inicial</Text>
-                <TextInput
-                  className="border border-border rounded-lg px-4 py-3 mb-4 text-foreground"
+                <CrudField
+                  label="Saldo Inicial"
                   placeholder="0,00"
                   value={formData.saldoInicial}
                   onChangeText={(text) => setFormData({ ...formData, saldoInicial: text })}
                   keyboardType="decimal-pad"
-                  placeholderTextColor="#687076"
+                  hint={
+                    editingId
+                      ? "Ao alterar o saldo inicial, o saldo atual é ajustado pela mesma diferença, preservando o efeito dos movimentos."
+                      : undefined
+                  }
                 />
-                {editingId ? (
-                  <Text className="text-xs text-muted mb-2">
-                    Ao alterar o saldo inicial, o saldo atual é ajustado pela mesma diferença,
-                    preservando o efeito dos movimentos.
-                  </Text>
-                ) : null}
               </ScrollView>
             </View>
           </View>
