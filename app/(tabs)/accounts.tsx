@@ -1,5 +1,6 @@
 import { ScrollView, Text, View, FlatList, Pressable, TextInput, Modal, Alert } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
+import { CrudFab, CrudHeader, CrudPrimaryActions } from "@/components/crud-actions";
 import { useState, useCallback } from "react";
 import { useAccounts } from "@/lib/contexts/AccountContext";
 import { useFocusEffect } from "expo-router";
@@ -158,10 +159,8 @@ export default function AccountsScreen() {
 
   return (
     <ScreenContainer className="flex-1">
-      <View className="flex-1 bg-background">
-        <View className="px-4 py-4 border-b border-border">
-          <Text className="text-2xl font-bold text-foreground">Contas</Text>
-        </View>
+      <View className="flex-1 bg-background" style={{ position: "relative" }}>
+        <CrudHeader title="Contas" onInclude={() => handleOpenModal()} />
 
         {loading ? (
           <View className="flex-1 items-center justify-center">
@@ -176,57 +175,44 @@ export default function AccountsScreen() {
             data={accounts}
             renderItem={renderAccountItem}
             keyExtractor={(item) => item.id}
-            contentContainerStyle={{ paddingVertical: 12 }}
+            contentContainerStyle={{ paddingVertical: 12, paddingBottom: 88 }}
           />
         )}
 
-        <Pressable
-          onPress={() => handleOpenModal()}
-          className="absolute bottom-6 right-6 bg-primary w-14 h-14 rounded-full items-center justify-center shadow-lg"
-        >
-          <Text className="text-2xl text-background">+</Text>
-        </Pressable>
+        <CrudFab onPress={() => handleOpenModal()} accessibilityLabel="Incluir conta" />
 
         <Modal visible={showModal} animationType="slide" transparent>
           <View className="flex-1 bg-black/50 justify-end">
-            <View className="bg-background rounded-t-2xl p-6 pb-8" style={{ maxHeight: "90%" }}>
-              <View className="mb-5">
-                <Text className="text-2xl font-bold text-foreground mb-3">
+            <View
+              style={{
+                backgroundColor: "#FFFFFF",
+                borderTopLeftRadius: 16,
+                borderTopRightRadius: 16,
+                padding: 24,
+                paddingBottom: 32,
+                maxHeight: "90%",
+              }}
+            >
+              <View style={{ marginBottom: 20 }}>
+                <Text
+                  style={{
+                    fontSize: 22,
+                    fontWeight: "700",
+                    color: "#212529",
+                    marginBottom: 12,
+                  }}
+                >
                   {editingId ? "Editar Conta" : "Nova Conta"}
                 </Text>
-                <View className="gap-2">
-                  <Pressable
-                    onPress={() => void handleSave()}
-                    disabled={saving}
-                    className="py-3 px-4 rounded-lg bg-primary"
-                  >
-                    <Text className="text-center text-background text-sm font-semibold">
-                      {saving ? "Salvando..." : editingId ? "Alterar" : "Incluir"}
-                    </Text>
-                  </Pressable>
-                  <View className="flex-row gap-2">
-                    <Pressable
-                      onPress={handleCloseModal}
-                      className="flex-1 py-3 px-4 rounded-lg bg-surface border border-border"
-                    >
-                      <Text className="text-center text-foreground text-sm font-semibold">
-                        Cancelar
-                      </Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={
-                        editingId ? () => void handleDelete(editingId) : handleResetForm
-                      }
-                      className={`flex-1 py-3 px-4 rounded-lg ${editingId ? "bg-error" : "bg-surface border border-border"}`}
-                    >
-                      <Text
-                        className={`text-center text-sm font-semibold ${editingId ? "text-background" : "text-foreground"}`}
-                      >
-                        {editingId ? "Excluir" : "Limpar"}
-                      </Text>
-                    </Pressable>
-                  </View>
-                </View>
+                <CrudPrimaryActions
+                  isEditing={Boolean(editingId)}
+                  saving={saving}
+                  onSave={() => void handleSave()}
+                  onCancel={handleCloseModal}
+                  onSecondary={
+                    editingId ? () => void handleDelete(editingId) : handleResetForm
+                  }
+                />
               </View>
 
               <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
