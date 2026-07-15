@@ -3,6 +3,9 @@
     "name": "Controle Financeiro",
     "slug": "finance-app",
     "version": "1.0.0",
+    "android": {
+      "package": "com.app.financeapp"
+    },
     "extra": {
       "eas": {
         "projectId": "66943bca-2050-422b-86fc-5aec7cd75aef"
